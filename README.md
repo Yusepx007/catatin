@@ -18,7 +18,6 @@ Aplikasi untuk mencatat pengeluaran harian dengan input seperti chat. Tulis beba
 - Recharts untuk grafik
 - AI rule-based TypeScript untuk Vercel
 - Groq LLM API opsional untuk checklist hackathon
-- Python AI tetap tersedia di folder `ai/` sebagai versi lokal/cadangan
 
 ## Setup Lokal
 
@@ -70,18 +69,6 @@ Ini yang dipakai Vercel, jadi tidak perlu Render, Google Cloud, atau hosting Pyt
 
 Kalau `GROQ_API_KEY` diisi, aplikasi akan mencoba Groq LLM API dulu. Kalau Groq limit, error, atau lambat, aplikasi otomatis fallback ke AI TypeScript bawaan.
 
-File Python tetap dibiarkan di:
-
-```text
-ai/local_ai.py
-```
-
-Kalau mau tes Python manual:
-
-```bash
-echo '{"rawText": "makan siang warteg 18rb kemarin"}' | python ai/local_ai.py parse
-```
-
 ## Deploy ke Vercel
 
 Deploy repo ini langsung ke Vercel sebagai Next.js app.
@@ -111,9 +98,8 @@ npm run lint
 ## Struktur Penting
 
 ```text
-ai/local_ai.py              # Python AI cadangan
 src/lib/catatin-ai.ts       # AI utama untuk Vercel
-src/lib/local-ai.ts         # jembatan API Next.js ke AI utama/remote optional
+src/lib/local-ai.ts         # jembatan API Next.js ke Groq/fallback AI
 src/app/api/                # endpoint API
 src/components/             # komponen UI
 supabase/schema.sql         # schema database dan RLS

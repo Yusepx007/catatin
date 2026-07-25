@@ -322,7 +322,7 @@ export default function HomePage() {
             fontSize: 12,
           }}>
             <div className="status-dot" />
-            Powered by Catatin Python AI
+            Powered by Catatin AI
             <span style={{ opacity: 0.5 }}>•</span>
             IndonesiaNEXT x Telkomsel
           </div>

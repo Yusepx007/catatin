@@ -105,7 +105,7 @@ export default function WeeklyInsight({ transactions }: Props) {
             Insight Mingguan AI Lokal
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-            {loading ? 'Menganalisis pola pengeluaran minggu ini...' : 'Klik untuk melihat analisis dari AI Python lokal'}
+            {loading ? 'Menganalisis pola pengeluaran minggu ini...' : 'Klik untuk melihat analisis dari Catatin AI'}
           </p>
         </div>
         {!loading && (
