@@ -201,14 +201,7 @@ export default function HomePage() {
       >
         <div style={{ width: '100%', maxWidth: 720 }}>
           <div style={{ marginBottom: 32 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              marginBottom: 18,
-            }}>
-              <p className="section-label">Catatin</p>
-            </div>
+
             <h1 style={{
               fontSize: 'clamp(2.8rem, 6vw, 4.8rem)',
               lineHeight: 1.02,
