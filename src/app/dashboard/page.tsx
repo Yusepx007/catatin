@@ -353,7 +353,7 @@ export default function DashboardPage() {
         </nav>
 
         <div className="dashboard-left">
-          <section className="surface-card noise-overlay" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
+          <section className="surface-card" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',

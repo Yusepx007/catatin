@@ -262,7 +262,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="surface-card noise-overlay" style={{ padding: 22, overflow: 'hidden', display: 'none' }}>
+          <div className="surface-card" style={{ padding: 22, overflow: 'hidden', display: 'none' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
