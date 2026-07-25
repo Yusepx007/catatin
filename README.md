@@ -1,203 +1,120 @@
 # Catatin
 
-Aplikasi buat catat pengeluaran sehari-hari dengan cara yang lebih manusiawi — tulis aja bebas kayak chat, nanti sistem yang baca nominalnya, kategoriin sendiri, dan simpan ke dashboard.
+Aplikasi untuk mencatat pengeluaran harian dengan input seperti chat. Tulis bebas, aplikasi membaca nominal, kategori, tanggal, lalu menyimpan ke dashboard.
 
-Dibuat karena capek buka spreadsheet tiap mau catat jajan.
+## Fitur
 
----
-
-## Apa yang bisa dilakukan
-
-- Tulis pengeluaran dalam kalimat bebas, misalnya `beli kopi 25rb tadi pagi` — langsung diproses
-- Dashboard sederhana buat pantau pengeluaran per kategori
-- Ada budget bulanan, kalau udah mau habis langsung kelihatan
-- Insight mingguan singkat soal pola belanja
-- Panel admin buat kelola user (karena daftar sendiri dimatiin)
-- Rate limiting biar API-nya gak disalahgunain
-
----
+- Parsing transaksi dari kalimat bebas, misalnya `beli kopi 25rb tadi pagi`
+- Dashboard pengeluaran per kategori
+- Budget bulanan
+- Insight mingguan
+- Panel admin untuk tambah user
+- Rate limiting untuk endpoint API
 
 ## Stack
 
-- **Next.js 16** (App Router) + TypeScript
-- **Supabase** — database, auth, dan RLS
-- **Tailwind CSS v4**
-- **Recharts** buat grafik
-- **Python 3** — engine parsing AI-nya, jalan lokal, gak butuh API key
+- Next.js 16 App Router + TypeScript
+- Supabase untuk auth, database, dan RLS
+- Recharts untuk grafik
+- AI rule-based TypeScript untuk Vercel
+- Groq LLM API opsional untuk checklist hackathon
+- Python AI tetap tersedia di folder `ai/` sebagai versi lokal/cadangan
 
----
-
-## Setup
-
-### Yang dibutuhin dulu
-
-- Node.js 18+
-- Python 3.10+
-- Akun Supabase (gratis)
-
-### Clone dan install
+## Setup Lokal
 
 ```bash
 git clone https://github.com/Yusepx007/catatin.git
 cd catatin
 npm install
-```
-
-### Isi environment variable
-
-```bash
-cp .env.example .env.local
-```
-
-Buka `.env.local` dan isi ini:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-`SERVICE_ROLE_KEY` dibutuhin khusus buat endpoint admin. Jangan pernah di-commit ya.
-
-### Setup database
-
-Pergi ke SQL Editor di dashboard Supabase, copy-paste isi `supabase/schema.sql`, lalu jalankan.
-
-Setelah itu, jadiin satu akun jadi admin:
-
-```sql
-UPDATE public.profiles SET role = 'admin' WHERE email = 'emailkamu@email.com';
-```
-
-### Jalanin
-
-```bash
 npm run dev
 ```
 
-Buka `localhost:3000`.
+Buka `http://localhost:3000`.
 
----
+## Environment Variables
 
-## Soal AI-nya
+Salin `.env.example` ke `.env.local`, lalu isi:
 
-Engine parsing-nya ditulis pakai Python murni di `ai/local_ai.py`. Gak pakai Gemini, GPT, atau API apapun — jadi gak ada biaya tambahan dan tetap jalan offline.
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=llama-3.1-8b-instant
+```
 
-Cara kerjanya: teks dikirim ke script Python lewat subprocess, hasilnya dikembaliin dalam bentuk JSON ke Next.js.
+`SUPABASE_SERVICE_ROLE_KEY` hanya untuk server/admin endpoint. Jangan commit secret.
+`GROQ_API_KEY` juga server-only, jadi cukup isi di `.env.local` atau Vercel Environment Variables.
 
-Contoh kalau mau coba langsung dari terminal:
+## Setup Database
+
+Jalankan isi `supabase/schema.sql` di Supabase SQL Editor.
+
+Promosikan akun pertama menjadi admin:
+
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE email = 'emailkamu@email.com';
+```
+
+## AI
+
+AI utama untuk aplikasi ada di:
+
+```text
+src/lib/catatin-ai.ts
+```
+
+Ini yang dipakai Vercel, jadi tidak perlu Render, Google Cloud, atau hosting Python.
+
+Kalau `GROQ_API_KEY` diisi, aplikasi akan mencoba Groq LLM API dulu. Kalau Groq limit, error, atau lambat, aplikasi otomatis fallback ke AI TypeScript bawaan.
+
+File Python tetap dibiarkan di:
+
+```text
+ai/local_ai.py
+```
+
+Kalau mau tes Python manual:
 
 ```bash
 echo '{"rawText": "makan siang warteg 18rb kemarin"}' | python ai/local_ai.py parse
 ```
 
-Output:
+## Deploy ke Vercel
 
-```json
-{
-  "category": "Makanan & Minuman",
-  "amount": 18000,
-  "transaction_date": "2026-07-24",
-  "description": "Makan siang warteg"
-}
-```
+Deploy repo ini langsung ke Vercel sebagai Next.js app.
 
-Format nominal yang dipahami: `25rb`, `1.5jt`, `Rp 50.000`, angka biasa juga bisa.
-
-Format tanggal: `kemarin`, `3 hari lalu`, `minggu lalu`, `24/07`, `2026-07-24`, `24 Juli`.
-
----
-
-## Deploy AI Python ke Render
-
-Kalau Next.js kamu jalan di Vercel, Python AI bisa dipisah ke Render sebagai **Web Service**.
-
-Di halaman Render yang ada pilihan **Static Sites**, **Web Services**, dan lainnya, pilih:
-
-```text
-New Web Service
-```
-
-Pakai konfigurasi ini:
-
-```text
-Runtime: Python
-Build Command: pip install -r ai/requirements.txt
-Start Command: uvicorn ai.api_server:app --host 0.0.0.0 --port $PORT
-Health Check Path: /health
-```
-
-Environment variable di Render:
+Isi Environment Variables di Vercel:
 
 ```env
-AI_SHARED_SECRET=buat-password-random-yang-panjang
-ALLOWED_ORIGINS=https://domain-vercel-kamu.vercel.app
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SITE_URL=https://domain-vercel-kamu.vercel.app
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=llama-3.1-8b-instant
 ```
 
-Setelah deploy, Render akan memberi URL seperti:
-
-```text
-https://catatin-python-ai.onrender.com
-```
-
-Masukkan ke Environment Variables di Vercel:
-
-```env
-PYTHON_AI_URL=https://catatin-python-ai.onrender.com
-AI_SHARED_SECRET=sama-dengan-yang-di-render
-```
-
-Kalau `PYTHON_AI_URL` tidak diisi, aplikasi tetap memakai Python lokal lewat `ai/local_ai.py`.
-
----
-
-## Struktur folder
-
-```
-catatin/
-├── ai/
-│   └── local_ai.py              # script Python untuk parsing dan insight
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── admin/           # endpoint kelola user
-│   │   │   ├── parse-transaction/
-│   │   │   └── weekly-insight/
-│   │   ├── dashboard/
-│   │   └── page.tsx             # halaman login/register
-│   ├── components/
-│   │   ├── AdminUserPanel.tsx
-│   │   ├── BudgetCard.tsx
-│   │   ├── CategoryChart.tsx
-│   │   ├── ChatInput.tsx
-│   │   ├── TransactionList.tsx
-│   │   └── WeeklyInsight.tsx
-│   └── lib/
-│       ├── local-ai.ts          # jembatan Next.js ke Python
-│       ├── rate-limit.ts
-│       ├── server-auth.ts
-│       └── supabase*.ts
-└── supabase/
-    └── schema.sql
-```
-
----
-
-## Database
-
-Tiga tabel utama: `profiles` (user + role), `transactions`, dan `budgets`. Semua pakai Row Level Security — tiap user cuma bisa lihat dan ubah datanya sendiri.
-
----
+Tidak perlu Render. Jika `GROQ_API_KEY` kosong, aplikasi tetap jalan memakai AI TypeScript bawaan.
 
 ## Scripts
 
 ```bash
-npm run dev      # development
-npm run build    # build production
-npm run start    # jalanin production build
-npm run lint     # lint
+npm run dev
+npm run build
+npm run start
+npm run lint
 ```
 
----
+## Struktur Penting
 
-Proyek ini bagian dari **IndonesiaNEXT × Telkomsel**.
+```text
+ai/local_ai.py              # Python AI cadangan
+src/lib/catatin-ai.ts       # AI utama untuk Vercel
+src/lib/local-ai.ts         # jembatan API Next.js ke AI utama/remote optional
+src/app/api/                # endpoint API
+src/components/             # komponen UI
+supabase/schema.sql         # schema database dan RLS
+```
