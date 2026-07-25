@@ -346,34 +346,46 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                               id={`edit-transaction-${t.id}`}
                               onClick={() => startEdit(t)}
                               style={{
-                                background: 'none',
-                                border: 'none',
+                                background: 'rgba(148, 163, 184, 0.06)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 999,
                                 color: 'var(--text-muted)',
                                 cursor: 'pointer',
-                                padding: 2,
+                                padding: '5px 9px',
                                 display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                fontSize: 11,
+                                fontWeight: 700,
                                 transition: 'color 0.2s',
                               }}
                               aria-label="Edit transaksi"
                             >
                               <EditIcon />
+                              Edit
                             </button>
                             <button
                               id={`delete-transaction-${t.id}`}
                               onClick={() => handleDelete(t.id)}
                               disabled={deletingId === t.id}
                               style={{
-                                background: 'none',
-                                border: 'none',
+                                background: 'rgba(248, 113, 113, 0.08)',
+                                border: '1px solid rgba(248, 113, 113, 0.16)',
+                                borderRadius: 999,
                                 color: 'var(--text-muted)',
                                 cursor: 'pointer',
-                                padding: 2,
+                                padding: '5px 9px',
                                 display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                fontSize: 11,
+                                fontWeight: 700,
                                 transition: 'color 0.2s',
                               }}
                               aria-label="Hapus transaksi"
                             >
                               <TrashIcon />
+                              Hapus
                             </button>
                           </div>
                         </div>

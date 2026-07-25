@@ -263,63 +263,20 @@ export default function DashboardPage() {
               </div>
               <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                 {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                {userEmail ? ` • ${userEmail}` : ''}
               </span>
             </div>
           </div>
 
           <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{
-              padding: '10px 14px',
-              borderRadius: 16,
-              background: 'rgba(15, 23, 42, 0.68)',
-              border: '1px solid var(--border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}>
-              <div className="status-dot" />
-              <div>
-                <p style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 2 }}>Bulan ini</p>
-                <p style={{
-                  fontWeight: 700,
-                  fontSize: 13,
-                  color: totalSpent > monthlyLimit * 0.9 ? '#fca5a5' : 'var(--accent-green-light)',
-                }}>
-                  Rp {totalSpent.toLocaleString('id-ID')}
-                </p>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '8px 10px 8px 8px',
-              borderRadius: 16,
-              background: 'rgba(15, 23, 42, 0.68)',
-              border: '1px solid var(--border)',
-            }}>
-              <div style={{
-                width: 34,
-                height: 34,
-                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(96, 165, 250, 0.18))',
-                border: '1px solid rgba(134, 239, 172, 0.18)',
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 13,
-                fontWeight: 700,
-                color: 'var(--accent-green-light)',
-              }}>
-                {userEmail.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600 }}>{userEmail || 'Pengguna'}</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-                  {userRole === 'admin' ? 'Admin aktif' : 'Akun aktif'}
-                </p>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveMenu('record')}
+              className="btn-primary"
+              style={{ padding: '10px 14px', fontSize: 13 }}
+            >
+              Catat transaksi
+            </button>
 
             <button
               id="sign-out-btn"
@@ -442,10 +399,12 @@ export default function DashboardPage() {
                   letterSpacing: '-0.03em',
                   marginBottom: 4,
                 }}>
-                  {activeTab === 'transactions' ? 'Semua catatan bulan ini' : 'Pola belanja per kategori'}
+                  {activeTab === 'transactions' ? 'CRUD transaksi bulan ini' : 'Pola belanja per kategori'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                  {now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                  {activeTab === 'transactions'
+                    ? 'Tambah lewat menu Catat, lalu edit atau hapus dari daftar ini.'
+                    : now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                 </p>
               </div>
 
@@ -495,7 +454,9 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <aside className="dashboard-right" style={{ display: activeMenu === 'overview' || activeMenu === 'budget' ? 'flex' : 'none' }}>
+        <aside className="dashboard-right" style={{
+          display: activeMenu === 'budget' || (activeMenu === 'overview' && (userRole === 'admin' || topCategory)) ? 'flex' : 'none',
+        }}>
           {userRole === 'admin' && <AdminUserPanel />}
 
           <div style={{ display: activeMenu === 'budget' ? 'block' : 'none' }}>
@@ -510,7 +471,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <section className="surface-card" style={{ padding: 20, display: activeMenu === 'overview' ? 'block' : 'none' }}>
+          <section className="surface-card" style={{ padding: 20, display: 'none' }}>
             <div style={{ marginBottom: 16 }}>
               <p className="section-label" style={{ marginBottom: 10 }}>Quick view</p>
               <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em' }}>Snapshot pengeluaran</h3>

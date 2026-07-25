@@ -342,6 +342,20 @@ export default function HomePage() {
             <span style={{ opacity: 0.5 }}>•</span>
             IndonesiaNEXT x Telkomsel
           </div>
+
+          <div className="mvp-feature-grid" aria-label="Fitur MVP Catatin">
+            {[
+              ['Auth pengguna', 'Daftar dan login mandiri dengan Supabase Auth.'],
+              ['AI parser transaksi', 'Input bebas seperti chat, nominal dan kategori langsung dibaca.'],
+              ['Dashboard realtime', 'Ringkasan, grafik kategori, budget, dan insight mingguan.'],
+              ['CRUD transaksi', 'Tambah, lihat, edit, dan hapus catatan pengeluaran.'],
+            ].map(([title, desc]) => (
+              <div key={title} className="mvp-feature-card">
+                <strong>{title}</strong>
+                <span>{desc}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
