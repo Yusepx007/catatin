@@ -1,0 +1,541 @@
+'use client';
+
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase, Transaction, Budget } from '@/lib/supabase';
+import ChatInput from '@/components/ChatInput';
+import CategoryChart from '@/components/CategoryChart';
+import BudgetCard from '@/components/BudgetCard';
+import WeeklyInsight from '@/components/WeeklyInsight';
+import TransactionList from '@/components/TransactionList';
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+
+function LogoMark() {
+  return (
+    <div style={{
+      width: 32,
+      height: 32,
+      background: 'linear-gradient(135deg, #10b981, #059669)',
+      borderRadius: 9,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="2" y="5" width="12" height="8" rx="1.5" stroke="white" strokeWidth="1.4" />
+        <path d="M5 5V3.5a3 3 0 0 1 6 0V5" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+        <circle cx="8" cy="9" r="1.2" fill="white" />
+      </svg>
+    </div>
+  );
+}
+
+function IconList() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 3h10M2 7h10M2 11h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconChart() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="7" width="3" height="6" rx="1" fill="currentColor" opacity="0.5" />
+      <rect x="5.5" y="4" width="3" height="9" rx="1" fill="currentColor" opacity="0.7" />
+      <rect x="10" y="1" width="3" height="12" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconLogout() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <path d="M5 2H2v9h3M9 9l3-2.5L9 4M13 6.5H5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
+
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysPassed = now.getDate();
+
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const weeklyTransactions = transactions.filter(
+    (t) => new Date(t.transaction_date) >= oneWeekAgo
+  );
+
+  const monthlyTransactions = transactions.filter(
+    (t) => t.transaction_date.startsWith(currentMonth)
+  );
+  const totalSpent = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const monthlyLimit = budget?.monthly_limit ?? 1_000_000;
+
+  const fetchData = async (uid: string, month: string) => {
+    const [txRes, budgetRes] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', uid)
+        .order('transaction_date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('budgets')
+        .select('*')
+        .eq('user_id', uid)
+        .eq('month', month)
+        .single(),
+    ]);
+    if (txRes.data) setTransactions(txRes.data);
+    if (budgetRes.data) setBudget(budgetRes.data);
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/'); return; }
+      setUserId(session.user.id);
+      setUserEmail(session.user.email || '');
+      await fetchData(session.user.id, currentMonth);
+      setLoading(false);
+    };
+    init();
+  }, [router, currentMonth]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  const handleRefresh = () => {
+    if (userId) fetchData(userId, currentMonth);
+  };
+
+  // ── Quick stats ────────────────────────────────────────────────────────────
+  const maxTransaction = monthlyTransactions.length > 0
+    ? Math.max(...monthlyTransactions.map((t) => t.amount))
+    : 0;
+  const avgPerTransaction = monthlyTransactions.length > 0
+    ? Math.round(totalSpent / monthlyTransactions.length)
+    : 0;
+  const busiestDate = (() => {
+    if (!monthlyTransactions.length) return '-';
+    const byDay = monthlyTransactions.reduce((acc, t) => {
+      acc[t.transaction_date] = (acc[t.transaction_date] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    const top = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+    return top
+      ? new Date(top[0] + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+      : '-';
+  })();
+
+  const quickStats = [
+    { label: 'Total transaksi', value: `${monthlyTransactions.length} transaksi` },
+    { label: 'Transaksi terbesar', value: maxTransaction > 0 ? `Rp ${maxTransaction.toLocaleString('id-ID')}` : '-' },
+    { label: 'Rata-rata / transaksi', value: avgPerTransaction > 0 ? `Rp ${avgPerTransaction.toLocaleString('id-ID')}` : '-' },
+    { label: 'Hari pengeluaran tertinggi', value: busiestDate },
+  ];
+
+  // ── Top category ───────────────────────────────────────────────────────────
+  const topCategory = (() => {
+    if (!monthlyTransactions.length) return null;
+    const totals = monthlyTransactions.reduce((acc, t) => {
+      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    const [name, amount] = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
+    return { name, amount, pct: Math.round((amount / totalSpent) * 100) };
+  })();
+
+  const categoryColors: Record<string, string> = {
+    'Makanan & Minuman': '#fb923c',
+    'Transportasi': '#60a5fa',
+    'Belanja': '#c084fc',
+    'Hiburan': '#f472b6',
+    'Kesehatan': '#34d399',
+    'Pendidikan': '#fbbf24',
+    'Tagihan & Utilitas': '#f87171',
+    'Lainnya': '#94a3b8',
+  };
+
+  // ── Loading screen ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-primary)',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          border: '3px solid var(--border)',
+          borderTopColor: 'var(--accent-green)',
+          borderRadius: '50%',
+        }} className="animate-spin-slow" />
+        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Memuat dashboard...</p>
+      </div>
+    );
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        background: 'rgba(8, 17, 31, 0.72)',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <div style={{
+          width: 'min(1400px, calc(100% - 32px))',
+          margin: '0 auto',
+          padding: '16px 0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 18,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <LogoMark />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
+                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em' }}>Catatin</span>
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  border: '1px solid rgba(134, 239, 172, 0.12)',
+                  color: 'var(--accent-green-light)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}>
+                  Dashboard
+                </span>
+              </div>
+              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{
+              padding: '10px 14px',
+              borderRadius: 16,
+              background: 'rgba(15, 23, 42, 0.68)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}>
+              <div className="status-dot" />
+              <div>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 2 }}>Bulan ini</p>
+                <p style={{
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: totalSpent > monthlyLimit * 0.9 ? '#fca5a5' : 'var(--accent-green-light)',
+                }}>
+                  Rp {totalSpent.toLocaleString('id-ID')}
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 10px 8px 8px',
+              borderRadius: 16,
+              background: 'rgba(15, 23, 42, 0.68)',
+              border: '1px solid var(--border)',
+            }}>
+              <div style={{
+                width: 34,
+                height: 34,
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(96, 165, 250, 0.18))',
+                border: '1px solid rgba(134, 239, 172, 0.18)',
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'var(--accent-green-light)',
+              }}>
+                {userEmail.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600 }}>{userEmail || 'Pengguna'}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>Akun aktif</p>
+              </div>
+            </div>
+
+            <button
+              id="sign-out-btn"
+              onClick={handleSignOut}
+              className="btn-secondary"
+              style={{ padding: '10px 14px', fontSize: 13 }}
+            >
+              <IconLogout />
+              Keluar
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="dashboard-main">
+        <div className="dashboard-left">
+          <section className="surface-card noise-overlay" style={{ padding: 24 }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 18,
+              flexWrap: 'wrap',
+              marginBottom: 20,
+            }}>
+              <div>
+                <p className="section-label" style={{ marginBottom: 12 }}>Ringkasan bulan ini</p>
+                <h1 style={{
+                  fontSize: 'clamp(1.8rem, 3vw, 2.35rem)',
+                  fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
+                  fontWeight: 800,
+                  letterSpacing: '-0.04em',
+                  marginBottom: 8,
+                }}>
+                  Kelola pengeluaran dengan tampilan yang lebih fokus.
+                </h1>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: 620, lineHeight: 1.7 }}>
+                  Tulis transaksi seperti biasa, lalu pantau ritme belanja, batas budget,
+                  dan kategori paling dominan tanpa harus berpindah-pindah tampilan.
+                </p>
+              </div>
+
+              <div style={{
+                minWidth: 220,
+                padding: 18,
+                borderRadius: 20,
+                background: 'rgba(8, 17, 31, 0.58)',
+                border: '1px solid var(--border)',
+              }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>Progress budget</p>
+                <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 6 }}>
+                  {Math.round((totalSpent / monthlyLimit) * 100)}%
+                </p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>
+                  dari limit bulanan sudah terpakai.
+                </p>
+              </div>
+            </div>
+
+            <div className="metric-grid">
+              {quickStats.map((item) => (
+                <div key={item.label} className="metric-card">
+                  <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>{item.label}</p>
+                  <p style={{
+                    fontWeight: 700,
+                    fontSize: 18,
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.3,
+                  }}>
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <WeeklyInsight transactions={weeklyTransactions} />
+
+          <div style={{ minHeight: 500 }}>
+            <ChatInput onTransactionSaved={handleRefresh} />
+          </div>
+
+          <section className="surface-card" style={{ padding: 22 }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+              marginBottom: 20,
+            }}>
+              <div>
+                <p className="section-label" style={{ marginBottom: 10 }}>
+                  {activeTab === 'transactions' ? 'Riwayat transaksi' : 'Analitik kategori'}
+                </p>
+                <h2 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 700,
+                  fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
+                  letterSpacing: '-0.03em',
+                  marginBottom: 4,
+                }}>
+                  {activeTab === 'transactions' ? 'Semua catatan bulan ini' : 'Pola belanja per kategori'}
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                  {now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: 6,
+                padding: 4,
+                borderRadius: 16,
+                background: 'rgba(8, 17, 31, 0.56)',
+                border: '1px solid var(--border)',
+              }}>
+                {(['transactions', 'analytics'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    id={`tab-${tab}-btn`}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      padding: '9px 14px',
+                      minWidth: 122,
+                      borderRadius: 12,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      fontFamily: 'inherit',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      background: activeTab === tab ? 'rgba(19, 31, 53, 0.96)' : 'transparent',
+                      color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
+                      boxShadow: activeTab === tab ? 'inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 26px rgba(2,6,23,0.2)' : 'none',
+                    }}
+                  >
+                    {tab === 'transactions' ? <><IconList /> Riwayat</> : <><IconChart /> Analitik</>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {activeTab === 'transactions' ? (
+              <TransactionList transactions={monthlyTransactions} onDeleted={handleRefresh} />
+            ) : (
+              <CategoryChart transactions={monthlyTransactions} />
+            )}
+          </section>
+        </div>
+
+        <aside className="dashboard-right">
+          <BudgetCard
+            totalSpent={totalSpent}
+            monthlyLimit={monthlyLimit}
+            daysInMonth={daysInMonth}
+            daysPassed={daysPassed}
+            userId={userId}
+            currentMonth={currentMonth}
+            onBudgetUpdated={handleRefresh}
+          />
+
+          <section className="surface-card" style={{ padding: 20 }}>
+            <div style={{ marginBottom: 16 }}>
+              <p className="section-label" style={{ marginBottom: 10 }}>Quick view</p>
+              <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em' }}>Snapshot pengeluaran</h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {quickStats.map((s) => (
+                <div key={s.label} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 14px',
+                  background: 'rgba(8, 17, 31, 0.56)',
+                  borderRadius: 16,
+                  border: '1px solid var(--border)',
+                }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.5 }}>{s.label}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13, textAlign: 'right' }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {topCategory && (
+            <section style={{
+              background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.76))',
+              border: '1px solid rgba(245, 158, 11, 0.22)',
+              borderRadius: 24,
+              padding: 22,
+              boxShadow: 'var(--shadow-sm)',
+            }}>
+              <p style={{
+                color: '#fbbf24',
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.12em',
+                marginBottom: 14,
+                textTransform: 'uppercase',
+              }}>
+                Kategori terbesar
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 18,
+                  background: `${categoryColors[topCategory.name] || '#94a3b8'}20`,
+                  border: `1px solid ${categoryColors[topCategory.name] || '#94a3b8'}38`,
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: categoryColors[topCategory.name] || '#94a3b8',
+                  letterSpacing: '0.04em',
+                  flexShrink: 0,
+                }}>
+                  {topCategory.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{topCategory.name}</p>
+                  <p className="gradient-text-gold" style={{ fontWeight: 800, fontSize: 22, marginBottom: 4 }}>
+                    Rp {topCategory.amount.toLocaleString('id-ID')}
+                  </p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+                    Mengambil porsi {topCategory.pct}% dari total bulan ini
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
