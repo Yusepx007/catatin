@@ -108,6 +108,49 @@ Format tanggal: `kemarin`, `3 hari lalu`, `minggu lalu`, `24/07`, `2026-07-24`, 
 
 ---
 
+## Deploy AI Python ke Render
+
+Kalau Next.js kamu jalan di Vercel, Python AI bisa dipisah ke Render sebagai **Web Service**.
+
+Di halaman Render yang ada pilihan **Static Sites**, **Web Services**, dan lainnya, pilih:
+
+```text
+New Web Service
+```
+
+Pakai konfigurasi ini:
+
+```text
+Runtime: Python
+Build Command: pip install -r ai/requirements.txt
+Start Command: uvicorn ai.api_server:app --host 0.0.0.0 --port $PORT
+Health Check Path: /health
+```
+
+Environment variable di Render:
+
+```env
+AI_SHARED_SECRET=buat-password-random-yang-panjang
+ALLOWED_ORIGINS=https://domain-vercel-kamu.vercel.app
+```
+
+Setelah deploy, Render akan memberi URL seperti:
+
+```text
+https://catatin-python-ai.onrender.com
+```
+
+Masukkan ke Environment Variables di Vercel:
+
+```env
+PYTHON_AI_URL=https://catatin-python-ai.onrender.com
+AI_SHARED_SECRET=sama-dengan-yang-di-render
+```
+
+Kalau `PYTHON_AI_URL` tidak diisi, aplikasi tetap memakai Python lokal lewat `ai/local_ai.py`.
+
+---
+
 ## Struktur folder
 
 ```

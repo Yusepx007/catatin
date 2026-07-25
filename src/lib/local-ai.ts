@@ -1,5 +1,3 @@
-import { spawn } from 'node:child_process';
-
 export type ParsedTransaction = {
   category: string;
   amount: number;
@@ -9,7 +7,60 @@ export type ParsedTransaction = {
 
 type LocalAiCommand = 'parse' | 'insight';
 
-function runLocalAi<T>(command: LocalAiCommand, payload: unknown): Promise<T> {
+function getRemoteAiUrl(): string | null {
+  const url = process.env.PYTHON_AI_URL?.trim();
+  return url ? url.replace(/\/+$/, '') : null;
+}
+
+async function runRemoteAi<T>(command: LocalAiCommand, payload: unknown): Promise<T> {
+  const baseUrl = getRemoteAiUrl();
+  if (!baseUrl) {
+    throw new Error('PYTHON_AI_URL belum dikonfigurasi.');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (process.env.AI_SHARED_SECRET) {
+      headers['x-ai-secret'] = process.env.AI_SHARED_SECRET;
+    }
+
+    const response = await fetch(`${baseUrl}/${command === 'parse' ? 'parse' : 'insight'}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    const body = await response.json().catch(() => null) as unknown;
+
+    if (!response.ok) {
+      const detail =
+        typeof body === 'object' && body !== null && 'detail' in body
+          ? String((body as { detail: unknown }).detail)
+          : 'AI Python gagal memproses request.';
+      throw new Error(detail);
+    }
+
+    return body as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('AI Python terlalu lama merespons. Coba lagi.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function runLocalAi<T>(command: LocalAiCommand, payload: unknown): Promise<T> {
+  const { spawn } = await import('node:child_process');
+
   return new Promise((resolve, reject) => {
     const pythonBin = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
     const scriptPath = 'ai/local_ai.py';
@@ -77,8 +128,14 @@ function runLocalAi<T>(command: LocalAiCommand, payload: unknown): Promise<T> {
   });
 }
 
+function runAi<T>(command: LocalAiCommand, payload: unknown): Promise<T> {
+  return getRemoteAiUrl()
+    ? runRemoteAi<T>(command, payload)
+    : runLocalAi<T>(command, payload);
+}
+
 export function parseTransaction(rawText: string): Promise<ParsedTransaction> {
-  return runLocalAi<ParsedTransaction>('parse', { rawText });
+  return runAi<ParsedTransaction>('parse', { rawText });
 }
 
 export async function generateWeeklyInsight(
@@ -89,6 +146,6 @@ export async function generateWeeklyInsight(
     description: string;
   }>
 ): Promise<string> {
-  const result = await runLocalAi<{ insight: string }>('insight', { transactions });
+  const result = await runAi<{ insight: string }>('insight', { transactions });
   return result.insight;
 }

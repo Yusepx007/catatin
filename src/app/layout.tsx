@@ -2,13 +2,19 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Catatin — Catat Keuangan Lewat Chat',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  title: 'Catatin - Catat Keuangan Lewat Chat',
   description: 'Catatin adalah aplikasi pencatat pengeluaran cerdas yang memungkinkan kamu mencatat transaksi hanya dengan satu kalimat bebas. Powered by AI.',
   keywords: 'catatan keuangan, pengeluaran, literasi finansial, AI, mahasiswa',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
-    title: 'Catatin — Catat Keuangan Lewat Chat',
+    title: 'Catatin - Catat Keuangan Lewat Chat',
     description: 'Catat pengeluaran harian cukup dengan satu kalimat. AI yang bekerja untuk finansialmu.',
     type: 'website',
+    images: ['/logo.png'],
   },
 };
 

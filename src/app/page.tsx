@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -162,7 +163,29 @@ export default function HomePage() {
           </div>
 
           <div style={{ marginBottom: 32 }}>
-            <p className="section-label" style={{ marginBottom: 18 }}>Catatin</p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              marginBottom: 18,
+            }}>
+              <Image
+                src="/logo.png"
+                alt="Catatin"
+                width={56}
+                height={56}
+                priority
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  objectFit: 'cover',
+                  background: '#ffffff',
+                  boxShadow: '0 18px 42px rgba(2, 6, 23, 0.26)',
+                }}
+              />
+              <p className="section-label">Catatin</p>
+            </div>
             <h1 style={{
               fontSize: 'clamp(2.8rem, 6vw, 4.8rem)',
               lineHeight: 1.02,
@@ -355,19 +378,20 @@ export default function HomePage() {
             <div style={{
               width: 48,
               height: 48,
-              borderRadius: 16,
-              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(96, 165, 250, 0.16))',
+              borderRadius: 14,
+              background: '#ffffff',
               border: '1px solid rgba(148, 163, 184, 0.16)',
-              display: 'grid',
-              placeItems: 'center',
+              overflow: 'hidden',
               flexShrink: 0,
+              boxShadow: '0 14px 30px rgba(2, 6, 23, 0.2)',
             }}>
-              <div style={{
-                width: 20,
-                height: 20,
-                borderRadius: 7,
-                background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-              }} />
+              <Image
+                src="/logo.png"
+                alt="Catatin"
+                width={48}
+                height={48}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
             </div>
           </div>
 

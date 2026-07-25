@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase, Transaction, Budget } from '@/lib/supabase';
 import ChatInput from '@/components/ChatInput';
 import CategoryChart from '@/components/CategoryChart';
@@ -19,17 +20,21 @@ function LogoMark() {
     <div style={{
       width: 32,
       height: 32,
-      background: 'linear-gradient(135deg, #10b981, #059669)',
       borderRadius: 9,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      overflow: 'hidden',
+      background: '#ffffff',
+      border: '1px solid rgba(134, 239, 172, 0.16)',
+      boxShadow: '0 10px 24px rgba(2, 6, 23, 0.22)',
+      flexShrink: 0,
     }}>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="2" y="5" width="12" height="8" rx="1.5" stroke="white" strokeWidth="1.4" />
-        <path d="M5 5V3.5a3 3 0 0 1 6 0V5" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-        <circle cx="8" cy="9" r="1.2" fill="white" />
-      </svg>
+      <Image
+        src="/logo.png"
+        alt="Catatin"
+        width={32}
+        height={32}
+        priority
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
     </div>
   );
 }
