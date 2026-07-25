@@ -200,11 +200,6 @@ export default function HomePage() {
         id="fitur"
       >
         <div style={{ width: '100%', maxWidth: 720 }}>
-          <div className="eyebrow" style={{ marginBottom: 24 }}>
-            <div className="status-dot" />
-            Catatan keuangan yang terasa ringan dipakai tiap hari
-          </div>
-
           <div style={{ marginBottom: 32 }}>
             <div style={{
               display: 'flex',
