@@ -544,15 +544,33 @@ export default function HomePage() {
 
           <div style={{ marginTop: 18 }}>
             <div className="soft-divider" />
-            <p style={{
-              color: 'var(--text-secondary)',
-              fontSize: 13,
-              lineHeight: 1.6,
-              marginTop: 18,
-              textAlign: 'center',
-            }}>
-              Akun baru dibuat oleh admin dari dashboard.
-            </p>
+            <button
+              id="toggle-auth-btn"
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+                setMessage('');
+                setPassword('');
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                color: 'var(--text-secondary)',
+                fontSize: 13,
+                lineHeight: 1.6,
+                marginTop: 18,
+                textAlign: 'center',
+                background: 'transparent',
+                border: 0,
+                cursor: 'pointer',
+              }}
+            >
+              {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
+              <span style={{ color: 'var(--accent-green-light)', fontWeight: 700 }}>
+                {isLogin ? 'Daftar sekarang' : 'Masuk'}
+              </span>
+            </button>
           </div>
         </div>
       </aside>

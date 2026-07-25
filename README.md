@@ -8,7 +8,7 @@ Aplikasi untuk mencatat pengeluaran harian dengan input seperti chat. Tulis beba
 - Dashboard pengeluaran per kategori
 - Budget bulanan
 - Insight mingguan
-- Panel admin untuk tambah user
+- User bisa daftar sendiri dari halaman login
 - Rate limiting untuk endpoint API
 
 ## Stack
@@ -49,7 +49,9 @@ GROQ_MODEL=llama-3.1-8b-instant
 
 Jalankan isi `supabase/schema.sql` di Supabase SQL Editor.
 
-Promosikan akun pertama menjadi admin:
+User baru bisa daftar sendiri dari halaman login. Secara default akun baru akan punya role `user`.
+
+Kalau nanti tetap mau memakai panel admin opsional, promosikan akun pertama menjadi admin:
 
 ```sql
 UPDATE public.profiles
