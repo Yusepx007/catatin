@@ -169,10 +169,27 @@ export default function HomePage() {
           <div className="nav-links">
             <a className="nav-link" href="#fitur">Fitur</a>
             <a className="nav-link" href="#alur">Alur</a>
-            <a className="nav-link" href="#login">Masuk</a>
-            <a className="btn-primary" href="#login" style={{ padding: '9px 14px', fontSize: 13 }}>
-              Mulai gratis
-            </a>
+            <button
+              type="button"
+              className="nav-link"
+              onClick={() => {
+                setIsLogin(true);
+                document.getElementById('login')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Masuk
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                setIsLogin(false);
+                document.getElementById('login')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              style={{ padding: '9px 14px', fontSize: 13 }}
+            >
+              Daftar
+            </button>
           </div>
         </div>
       </nav>
@@ -581,6 +598,18 @@ export default function HomePage() {
         </div>
       </aside>
       </main>
+
+      <footer className="landing-footer">
+        <div>
+          <strong>Catatin</strong>
+          <span>Full-stack MVP untuk pencatatan pengeluaran berbasis AI.</span>
+        </div>
+        <div>
+          <span>Supabase Auth + Database</span>
+          <span>Groq API + fallback AI</span>
+          <span>CRUD transaksi</span>
+        </div>
+      </footer>
     </>
   );
 }

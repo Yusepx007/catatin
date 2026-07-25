@@ -6,6 +6,7 @@ type Message = {
   id: string;
   type: 'user' | 'ai' | 'confirm' | 'success' | 'error';
   content: string;
+  rawText?: string;
   parsedData?: {
     category: string;
     amount: number;
@@ -65,12 +66,13 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingRawText, setPendingRawText] = useState('');
+  const [savedConfirmIds, setSavedConfirmIds] = useState<Set<string>>(new Set());
   const [rateLimit, setRateLimit] = useState<RateLimit>(null);
   const [countdown, setCountdown] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const messageIdRef = useRef(1);
+  const savedConfirmRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -144,10 +146,10 @@ export default function ChatInput({ onTransactionSaved }: Props) {
 
       if (!res.ok) throw new Error(data.error || 'Parsing gagal');
 
-      setPendingRawText(text);
       addMessage({
         type: 'confirm',
         content: 'Transaksi berhasil diparse. Apakah datanya sudah benar?',
+        rawText: text,
         parsedData: data.data,
       });
     } catch (err: unknown) {
@@ -158,7 +160,18 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     }
   };
 
-  const handleConfirm = async (parsedData: NonNullable<Message['parsedData']>) => {
+  const markConfirmSaved = (messageId: string, saved: boolean) => {
+    if (saved) {
+      savedConfirmRef.current.add(messageId);
+    } else {
+      savedConfirmRef.current.delete(messageId);
+    }
+    setSavedConfirmIds(new Set(savedConfirmRef.current));
+  };
+
+  const handleConfirm = async (message: Message) => {
+    if (!message.parsedData || savedConfirmRef.current.has(message.id)) return;
+    markConfirmSaved(message.id, true);
     setIsLoading(true);
     try {
       const { supabase } = await import('@/lib/supabase');
@@ -167,32 +180,31 @@ export default function ChatInput({ onTransactionSaved }: Props) {
 
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
-        raw_text: pendingRawText,
-        category: parsedData.category,
-        amount: parsedData.amount,
-        transaction_date: parsedData.transaction_date,
-        description: parsedData.description,
+        raw_text: message.rawText || message.parsedData.description,
+        category: message.parsedData.category,
+        amount: message.parsedData.amount,
+        transaction_date: message.parsedData.transaction_date,
+        description: message.parsedData.description,
       });
 
       if (error) throw error;
 
       addMessage({
         type: 'success',
-        content: `Transaksi disimpan — ${parsedData.description} (Rp ${parsedData.amount.toLocaleString('id-ID')})`,
+        content: `Transaksi disimpan - ${message.parsedData.description} (Rp ${message.parsedData.amount.toLocaleString('id-ID')})`,
       });
       onTransactionSaved();
     } catch (err: unknown) {
+      markConfirmSaved(message.id, false);
       const msg = err instanceof Error ? err.message : 'Gagal menyimpan';
       addMessage({ type: 'error', content: `Gagal menyimpan: ${msg}` });
     } finally {
       setIsLoading(false);
-      setPendingRawText('');
     }
   };
 
   const handleReject = () => {
     addMessage({ type: 'ai', content: 'Coba ketik ulang dengan deskripsi yang lebih lengkap.' });
-    setPendingRawText('');
   };
 
   const examples = [
@@ -326,17 +338,17 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     id="confirm-transaction-btn"
-                    onClick={() => handleConfirm(msg.parsedData!)}
-                    disabled={isLoading}
+                    onClick={() => handleConfirm(msg)}
+                    disabled={isLoading || savedConfirmIds.has(msg.id)}
                     className="btn-primary"
                     style={{ flex: 1, justifyContent: 'center', padding: '10px 14px', fontSize: 13 }}
                   >
-                    Simpan
+                    {savedConfirmIds.has(msg.id) ? 'Tersimpan' : 'Simpan'}
                   </button>
                   <button
                     id="reject-transaction-btn"
                     onClick={handleReject}
-                    disabled={isLoading}
+                    disabled={isLoading || savedConfirmIds.has(msg.id)}
                     className="btn-secondary"
                     style={{ flex: 1, justifyContent: 'center', padding: '10px 14px', fontSize: 13 }}
                   >

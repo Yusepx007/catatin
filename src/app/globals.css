@@ -500,6 +500,30 @@ select {
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
+.landing-footer {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 34px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.landing-footer div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.landing-footer strong {
+  color: var(--text-primary);
+}
+
 .nav-link:hover,
 .dashboard-menu-btn:hover {
   background: rgba(148, 163, 184, 0.08);
@@ -656,7 +680,6 @@ select {
   }
 
   .landing-auth {
-    order: -1;
     padding: 22px 22px 12px;
     align-items: flex-start;
   }
@@ -735,5 +758,10 @@ select {
 
   .mvp-feature-grid {
     grid-template-columns: 1fr;
+  }
+
+  .landing-footer {
+    width: min(100% - 24px, 1180px);
+    padding-bottom: 24px;
   }
 }
