@@ -18,13 +18,13 @@ import AdminUserPanel from '@/components/AdminUserPanel';
 function LogoMark() {
   return (
     <div style={{
-      width: 42,
-      height: 42,
-      borderRadius: 12,
+      width: 40,
+      height: 40,
+      borderRadius: 10,
       overflow: 'hidden',
-      background: '#ffffff',
-      border: '1px solid rgba(134, 239, 172, 0.16)',
-      boxShadow: '0 10px 24px rgba(2, 6, 23, 0.22)',
+      background: 'transparent',
+      border: 0,
+      boxShadow: 'none',
       flexShrink: 0,
     }}>
       <Image
@@ -33,7 +33,8 @@ function LogoMark() {
         width={42}
         height={42}
         priority
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        className="logo-clean"
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
       />
     </div>
   );

@@ -156,7 +156,8 @@ export default function HomePage() {
                 width={44}
                 height={44}
                 priority
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                className="logo-clean"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               />
             </div>
             <div>
@@ -194,21 +195,6 @@ export default function HomePage() {
               gap: 14,
               marginBottom: 18,
             }}>
-              <Image
-                src="/logo.png"
-                alt="Catatin"
-                width={56}
-                height={56}
-                priority
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 16,
-                  objectFit: 'cover',
-                  background: '#ffffff',
-                  boxShadow: '0 18px 42px rgba(2, 6, 23, 0.26)',
-                }}
-              />
               <p className="section-label">Catatin</p>
             </div>
             <h1 style={{
@@ -398,24 +384,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: 14,
-              background: '#ffffff',
-              border: '1px solid rgba(148, 163, 184, 0.16)',
-              overflow: 'hidden',
-              flexShrink: 0,
-              boxShadow: '0 14px 30px rgba(2, 6, 23, 0.2)',
-            }}>
-              <Image
-                src="/logo.png"
-                alt="Catatin"
-                width={48}
-                height={48}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            </div>
+            <div style={{ flexShrink: 0, width: 42 }} />
           </div>
 
           <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} noValidate>
