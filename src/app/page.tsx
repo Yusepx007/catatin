@@ -145,16 +145,41 @@ export default function HomePage() {
   }
 
   return (
-    <main className="auth-layout" style={{ position: 'relative' }}>
+    <>
+      <nav className="site-nav">
+        <div className="site-nav-inner">
+          <div className="brand-lockup">
+            <div className="brand-logo">
+              <Image
+                src="/logo.png"
+                alt="Catatin"
+                width={44}
+                height={44}
+                priority
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+            <div>
+              <p className="brand-title">Catatin</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Expense tracker berbasis AI</p>
+            </div>
+          </div>
+
+          <div className="nav-links">
+            <a className="nav-link" href="#fitur">Fitur</a>
+            <a className="nav-link" href="#alur">Alur</a>
+            <a className="nav-link" href="#login">Masuk</a>
+            <a className="btn-primary" href="#login" style={{ padding: '9px 14px', fontSize: 13 }}>
+              Mulai gratis
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <main className="auth-layout" style={{ position: 'relative' }}>
       <section
-        className="animate-fade-in-up"
-        style={{
-          padding: '56px clamp(24px, 5vw, 72px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 0,
-        }}
+        className="landing-copy animate-fade-in-up"
+        id="fitur"
       >
         <div style={{ width: '100%', maxWidth: 720 }}>
           <div className="eyebrow" style={{ marginBottom: 24 }}>
@@ -212,28 +237,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: 14,
-            marginBottom: 18,
-          }}>
+          <div className="plain-feature-list">
             {features.map((f, i) => (
               <div
                 key={i}
-                className="card"
-                style={{
-                  padding: 18,
-                  background: 'rgba(10, 18, 32, 0.72)',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
-                }}
+                className="plain-feature"
               >
                 <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 12,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 999,
                   background: 'var(--gradient-green-soft)',
                   border: '1px solid rgba(134, 239, 172, 0.14)',
                   display: 'flex',
@@ -244,12 +257,12 @@ export default function HomePage() {
                 }}>
                   <IconCheck />
                 </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13.5, lineHeight: 1.55 }}>{f.label}</p>
+                <p>{f.label}</p>
               </div>
             ))}
           </div>
 
-          <div className="surface-card noise-overlay" style={{ padding: 22, overflow: 'hidden' }}>
+          <div className="surface-card noise-overlay" style={{ padding: 22, overflow: 'hidden', display: 'none' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -312,6 +325,23 @@ export default function HomePage() {
             </div>
           </div>
 
+          <div id="alur" style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            color: 'var(--text-secondary)',
+            fontSize: 13,
+            marginTop: 4,
+          }}>
+            <strong style={{ color: 'var(--text-primary)' }}>Alur demo:</strong>
+            <span>Tulis transaksi</span>
+            <span style={{ color: 'var(--accent-green-light)' }}>→</span>
+            <span>AI parse otomatis</span>
+            <span style={{ color: 'var(--accent-green-light)' }}>→</span>
+            <span>Dashboard langsung update</span>
+          </div>
+
           <div style={{
             marginTop: 26,
             display: 'flex',
@@ -330,15 +360,8 @@ export default function HomePage() {
       </section>
 
       <aside
-        className="animate-slide-in-right"
-        style={{
-          padding: '32px clamp(20px, 4vw, 36px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 0,
-          position: 'relative',
-        }}
+        className="landing-auth animate-slide-in-right"
+        id="login"
       >
         <div
           className="surface-card"
@@ -574,6 +597,7 @@ export default function HomePage() {
           </div>
         </div>
       </aside>
-    </main>
+      </main>
+    </>
   );
 }

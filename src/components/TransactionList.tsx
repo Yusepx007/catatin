@@ -8,6 +8,24 @@ type Props = {
   onDeleted: () => void;
 };
 
+type DraftTransaction = {
+  description: string;
+  amount: string;
+  category: string;
+  transaction_date: string;
+};
+
+const categories = [
+  'Makanan & Minuman',
+  'Transportasi',
+  'Belanja',
+  'Hiburan',
+  'Kesehatan',
+  'Pendidikan',
+  'Tagihan & Utilitas',
+  'Lainnya',
+];
+
 const categoryColors: Record<string, string> = {
   'Makanan & Minuman': '#fb923c',
   'Transportasi': '#60a5fa',
@@ -71,8 +89,60 @@ function TrashIcon() {
   );
 }
 
+function EditIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <path d="M8.8 1.8l2.4 2.4-6.7 6.7H2.1V8.5l6.7-6.7z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function TransactionList({ transactions, onDeleted }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<DraftTransaction>({
+    description: '',
+    amount: '',
+    category: categories[0],
+    transaction_date: '',
+  });
+
+  const startEdit = (transaction: Transaction) => {
+    setEditingId(transaction.id);
+    setDraft({
+      description: transaction.description,
+      amount: String(transaction.amount),
+      category: transaction.category,
+      transaction_date: transaction.transaction_date,
+    });
+  };
+
+  const handleSave = async (id: string) => {
+    const amount = Number(draft.amount);
+    if (!draft.description.trim() || !draft.transaction_date || !Number.isFinite(amount) || amount <= 0) return;
+    setSavingId(id);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          description: draft.description.trim(),
+          raw_text: draft.description.trim(),
+          amount,
+          category: draft.category,
+          transaction_date: draft.transaction_date,
+        })
+        .eq('id', id);
+      if (!error) {
+        setEditingId(null);
+        onDeleted();
+      }
+    } catch (err) {
+      console.error('[TransactionList] update error:', err);
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus transaksi ini?')) return;
@@ -161,73 +231,157 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {grouped[date].map((t) => (
-                <div
-                  key={t.id}
-                  style={{
-                    background: 'rgba(8, 17, 31, 0.56)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 18,
-                    padding: '13px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 11,
-                    transition: 'all 0.2s ease',
-                    opacity: deletingId === t.id ? 0.4 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget).style.borderColor = 'var(--border-light)';
-                    (e.currentTarget).style.background = 'rgba(12, 21, 38, 0.84)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget).style.borderColor = 'var(--border)';
-                    (e.currentTarget).style.background = 'rgba(8, 17, 31, 0.56)';
-                  }}
-                >
-                  <CategoryInitial category={t.category} />
+              {grouped[date].map((t) => {
+                const isEditing = editingId === t.id;
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
-                      fontWeight: 500,
-                      fontSize: 14,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      marginBottom: 3,
-                    }}>
-                      {t.description}
-                    </p>
-                    <span className={`category-badge ${categoryClass[t.category] || 'cat-other'}`} style={{ fontSize: 10 }}>
-                      {t.category}
-                    </span>
-                  </div>
+                return (
+                  <div
+                    key={t.id}
+                    style={{
+                      background: 'rgba(8, 17, 31, 0.56)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 18,
+                      padding: '13px 14px',
+                      display: 'flex',
+                      alignItems: isEditing ? 'stretch' : 'center',
+                      gap: 11,
+                      transition: 'all 0.2s ease',
+                      opacity: deletingId === t.id ? 0.4 : 1,
+                      flexDirection: isEditing ? 'column' : 'row',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget).style.borderColor = 'var(--border-light)';
+                      (e.currentTarget).style.background = 'rgba(12, 21, 38, 0.84)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget).style.borderColor = 'var(--border)';
+                      (e.currentTarget).style.background = 'rgba(8, 17, 31, 0.56)';
+                    }}
+                  >
+                    {isEditing ? (
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) 140px', gap: 10 }}>
+                          <input
+                            className="input-field"
+                            value={draft.description}
+                            onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
+                            placeholder="Keterangan transaksi"
+                            style={{ padding: '10px 12px', fontSize: 13 }}
+                          />
+                          <input
+                            className="input-field"
+                            value={draft.amount}
+                            onChange={(event) => setDraft((prev) => ({ ...prev, amount: event.target.value }))}
+                            type="number"
+                            min={1}
+                            placeholder="Nominal"
+                            style={{ padding: '10px 12px', fontSize: 13 }}
+                          />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 150px', gap: 10 }}>
+                          <select
+                            className="input-field"
+                            value={draft.category}
+                            onChange={(event) => setDraft((prev) => ({ ...prev, category: event.target.value }))}
+                            style={{ padding: '10px 12px', fontSize: 13 }}
+                          >
+                            {categories.map((category) => (
+                              <option key={category} value={category}>{category}</option>
+                            ))}
+                          </select>
+                          <input
+                            className="input-field"
+                            value={draft.transaction_date}
+                            onChange={(event) => setDraft((prev) => ({ ...prev, transaction_date: event.target.value }))}
+                            type="date"
+                            style={{ padding: '10px 12px', fontSize: 13 }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => setEditingId(null)}
+                            style={{ padding: '8px 12px', fontSize: 12 }}
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => handleSave(t.id)}
+                            disabled={savingId === t.id}
+                            style={{ padding: '8px 12px', fontSize: 12 }}
+                          >
+                            {savingId === t.id ? 'Menyimpan...' : 'Simpan perubahan'}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <CategoryInitial category={t.category} />
 
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                      Rp {t.amount.toLocaleString('id-ID')}
-                    </p>
-                    <button
-                      id={`delete-transaction-${t.id}`}
-                      onClick={() => handleDelete(t.id)}
-                      disabled={deletingId === t.id}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: 2,
-                        display: 'flex',
-                        transition: 'color 0.2s',
-                      }}
-                      onMouseEnter={(e) => ((e.currentTarget).style.color = '#f87171')}
-                      onMouseLeave={(e) => ((e.currentTarget).style.color = 'var(--text-muted)')}
-                      aria-label="Hapus transaksi"
-                    >
-                      <TrashIcon />
-                    </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontWeight: 500,
+                            fontSize: 14,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            marginBottom: 3,
+                          }}>
+                            {t.description}
+                          </p>
+                          <span className={`category-badge ${categoryClass[t.category] || 'cat-other'}`} style={{ fontSize: 10 }}>
+                            {t.category}
+                          </span>
+                        </div>
+
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+                            Rp {t.amount.toLocaleString('id-ID')}
+                          </p>
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button
+                              id={`edit-transaction-${t.id}`}
+                              onClick={() => startEdit(t)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: 2,
+                                display: 'flex',
+                                transition: 'color 0.2s',
+                              }}
+                              aria-label="Edit transaksi"
+                            >
+                              <EditIcon />
+                            </button>
+                            <button
+                              id={`delete-transaction-${t.id}`}
+                              onClick={() => handleDelete(t.id)}
+                              disabled={deletingId === t.id}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: 2,
+                                display: 'flex',
+                                transition: 'color 0.2s',
+                              }}
+                              aria-label="Hapus transaksi"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

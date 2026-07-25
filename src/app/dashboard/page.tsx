@@ -18,9 +18,9 @@ import AdminUserPanel from '@/components/AdminUserPanel';
 function LogoMark() {
   return (
     <div style={{
-      width: 32,
-      height: 32,
-      borderRadius: 9,
+      width: 42,
+      height: 42,
+      borderRadius: 12,
       overflow: 'hidden',
       background: '#ffffff',
       border: '1px solid rgba(134, 239, 172, 0.16)',
@@ -30,8 +30,8 @@ function LogoMark() {
       <Image
         src="/logo.png"
         alt="Catatin"
-        width={32}
-        height={32}
+        width={42}
+        height={42}
         priority
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
       />
@@ -75,6 +75,7 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeMenu, setActiveMenu] = useState<'overview' | 'record' | 'history' | 'budget'>('overview');
   const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
 
   const currentMonth = new Date().toISOString().slice(0, 7);
@@ -116,22 +117,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push('/'); return; }
-      setUserId(session.user.id);
-      setUserEmail(session.user.email || '');
-      await Promise.all([
-        fetchData(session.user.id, currentMonth),
-        fetch('/api/admin/me', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        })
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            setUserRole(data?.user?.role === 'admin' ? 'admin' : 'user');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { router.push('/'); return; }
+        setUserId(session.user.id);
+        setUserEmail(session.user.email || '');
+        await Promise.allSettled([
+          fetchData(session.user.id, currentMonth),
+          fetch('/api/admin/me', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
           })
-          .catch(() => setUserRole('user')),
-      ]);
-      setLoading(false);
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              setUserRole(data?.user?.role === 'admin' ? 'admin' : 'user');
+            })
+            .catch(() => setUserRole('user')),
+        ]);
+      } finally {
+        setLoading(false);
+      }
     };
     init();
   }, [router, currentMonth]);
@@ -230,7 +234,7 @@ export default function DashboardPage() {
         borderBottom: '1px solid var(--border)',
       }}>
         <div style={{
-          width: 'min(1400px, calc(100% - 32px))',
+          width: 'min(1180px, calc(100% - 32px))',
           margin: '0 auto',
           padding: '16px 0',
           display: 'flex',
@@ -239,7 +243,7 @@ export default function DashboardPage() {
           gap: 18,
           flexWrap: 'wrap',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
             <LogoMark />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
@@ -262,7 +266,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div style={{
               padding: '10px 14px',
               borderRadius: 16,
@@ -330,8 +334,26 @@ export default function DashboardPage() {
       </header>
 
       <div className="dashboard-main">
+        <nav className="dashboard-menu" aria-label="Menu dashboard">
+          {[
+            ['overview', 'Ringkasan'],
+            ['record', 'Catat'],
+            ['history', 'Riwayat & Analitik'],
+            ['budget', 'Budget'],
+          ].map(([menu, label]) => (
+            <button
+              key={menu}
+              type="button"
+              className={`dashboard-menu-btn ${activeMenu === menu ? 'active' : ''}`}
+              onClick={() => setActiveMenu(menu as typeof activeMenu)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+
         <div className="dashboard-left">
-          <section className="surface-card noise-overlay" style={{ padding: 24 }}>
+          <section className="surface-card noise-overlay" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -391,13 +413,15 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <WeeklyInsight transactions={weeklyTransactions} />
+          <div style={{ display: activeMenu === 'overview' ? 'block' : 'none' }}>
+            <WeeklyInsight transactions={weeklyTransactions} />
+          </div>
 
-          <div style={{ minHeight: 500 }}>
+          <div style={{ minHeight: 500, display: activeMenu === 'record' ? 'block' : 'none' }}>
             <ChatInput onTransactionSaved={handleRefresh} />
           </div>
 
-          <section className="surface-card" style={{ padding: 22 }}>
+          <section className="surface-card" style={{ padding: 22, display: activeMenu === 'history' ? 'block' : 'none' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -470,20 +494,22 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <aside className="dashboard-right">
+        <aside className="dashboard-right" style={{ display: activeMenu === 'overview' || activeMenu === 'budget' ? 'flex' : 'none' }}>
           {userRole === 'admin' && <AdminUserPanel />}
 
-          <BudgetCard
-            totalSpent={totalSpent}
-            monthlyLimit={monthlyLimit}
-            daysInMonth={daysInMonth}
-            daysPassed={daysPassed}
-            userId={userId}
-            currentMonth={currentMonth}
-            onBudgetUpdated={handleRefresh}
-          />
+          <div style={{ display: activeMenu === 'budget' ? 'block' : 'none' }}>
+            <BudgetCard
+              totalSpent={totalSpent}
+              monthlyLimit={monthlyLimit}
+              daysInMonth={daysInMonth}
+              daysPassed={daysPassed}
+              userId={userId}
+              currentMonth={currentMonth}
+              onBudgetUpdated={handleRefresh}
+            />
+          </div>
 
-          <section className="surface-card" style={{ padding: 20 }}>
+          <section className="surface-card" style={{ padding: 20, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{ marginBottom: 16 }}>
               <p className="section-label" style={{ marginBottom: 10 }}>Quick view</p>
               <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em' }}>Snapshot pengeluaran</h3>
