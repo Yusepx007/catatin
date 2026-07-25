@@ -25,6 +25,18 @@ const securityHeaders = [
     key: "X-XSS-Protection",
     value: "1; mode=block",
   },
+  {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
+  },
+  {
+    key: "X-Permitted-Cross-Domain-Policies",
+    value: "none",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: "base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'",
+  },
 ];
 
 const nextConfig: NextConfig = {
@@ -36,8 +48,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Prevent exposing server-side env vars to client
-  serverExternalPackages: ["@google/generative-ai"],
 };
 
 export default nextConfig;

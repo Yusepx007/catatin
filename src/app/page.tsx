@@ -299,7 +299,7 @@ export default function HomePage() {
             fontSize: 12,
           }}>
             <div className="status-dot" />
-            Powered by Google Gemini
+            Powered by Catatin Python AI
             <span style={{ opacity: 0.5 }}>•</span>
             IndonesiaNEXT x Telkomsel
           </div>
@@ -520,25 +520,15 @@ export default function HomePage() {
 
           <div style={{ marginTop: 18 }}>
             <div className="soft-divider" />
-            <button
-              id="toggle-auth-btn"
-              onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); setPassword(''); }}
-              style={{
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                fontSize: 14,
-                cursor: 'pointer',
-                marginTop: 18,
-                textAlign: 'center',
-              }}
-            >
-              {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
-              <span style={{ color: 'var(--accent-green-light)', fontWeight: 700 }}>
-                {isLogin ? 'Daftar sekarang' : 'Masuk'}
-              </span>
-            </button>
+            <p style={{
+              color: 'var(--text-secondary)',
+              fontSize: 13,
+              lineHeight: 1.6,
+              marginTop: 18,
+              textAlign: 'center',
+            }}>
+              Akun baru dibuat oleh admin dari dashboard.
+            </p>
           </div>
         </div>
       </aside>

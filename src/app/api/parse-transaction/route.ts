@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseTransaction } from '@/lib/gemini';
+import { parseTransaction } from '@/lib/local-ai';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { requireAuthenticatedUser } from '@/lib/server-auth';
+
+export const runtime = 'nodejs';
 
 const MAX_INPUT_LENGTH = 500;
 const MIN_INPUT_LENGTH = 3;
@@ -41,10 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const user = await requireAuthenticatedUser(request);
+    const rateLimit = checkRateLimit(`parse:${user.id}`, 30, 60_000);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'Layanan AI belum dikonfigurasi. Hubungi administrator.' },
-        { status: 503 }
+        { error: `Terlalu banyak request. Tunggu ${rateLimit.retryAfter} detik lalu coba lagi.` },
+        { status: 429 }
       );
     }
 
@@ -71,48 +77,24 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[parse-transaction] Error:', error);
 
-    // Handle specific Gemini API errors
-    const errObj = error as {
-      status?: number;
-      statusText?: string;
-      message?: string;
-      errorDetails?: Array<{ '@type'?: string; retryDelay?: string }>;
-    };
-    const status = errObj?.status;
-    const message = errObj?.message || '';
+    const message = error instanceof Error ? error.message : '';
 
-    if (status === 429) {
-      // Extract retryDelay from errorDetails array (Gemini error structure)
-      const retryInfo = errObj?.errorDetails?.find(
-        (d) => d?.['@type']?.includes('RetryInfo') && d?.retryDelay
-      );
-      const rawDelay = retryInfo?.retryDelay || '';
-      const seconds = parseInt(rawDelay) || 60;
+    if (message === 'UNAUTHORIZED') {
       return NextResponse.json(
-        { error: `Batas request tercapai. Tunggu sekitar ${seconds} detik lalu coba lagi.` },
-        { status: 429 }
-      );
-    }
-
-    if (status === 401 || status === 403) {
-      return NextResponse.json(
-        { error: 'API key tidak valid. Hubungi administrator.' },
-        { status: 503 }
-      );
-    }
-
-    if (status === 404) {
-      return NextResponse.json(
-        { error: 'Model AI tidak tersedia. Hubungi administrator.' },
-        { status: 503 }
+        { error: 'Sesi tidak valid. Silakan masuk kembali.' },
+        { status: 401 }
       );
     }
 
     if (message.includes('JSON') || message.includes('parse') || message.includes('SyntaxError')) {
       return NextResponse.json(
-        { error: 'AI gagal membaca format transaksi. Coba tulis lebih spesifik, contoh: "beli kopi 25rb tadi pagi".' },
+        { error: 'AI lokal gagal membaca format transaksi. Coba tulis lebih spesifik, contoh: "beli kopi 25rb tadi pagi".' },
         { status: 422 }
       );
+    }
+
+    if (message.includes('Nominal')) {
+      return NextResponse.json({ error: message }, { status: 422 });
     }
 
     return NextResponse.json(

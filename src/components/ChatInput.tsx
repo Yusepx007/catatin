@@ -117,9 +117,16 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     setIsLoading(true);
 
     try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sesi tidak valid. Silakan masuk kembali.');
+
       const res = await fetch('/api/parse-transaction', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ rawText: text }),
       });
 
@@ -238,8 +245,8 @@ export default function ChatInput({ onTransactionSaved }: Props) {
           }}>
             {countdown > 0
               ? `Tunggu ${countdown} detik sebelum kirim lagi`
-              : isLoading ? 'AI sedang memproses...'
-              : 'Ketik bebas, AI yang parse'}
+              : isLoading ? 'AI lokal sedang memproses...'
+              : 'Ketik bebas, AI lokal yang parse'}
           </p>
         </div>
       </div>

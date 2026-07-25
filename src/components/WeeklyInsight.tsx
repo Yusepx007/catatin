@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 type Props = {
   transactions: Array<{
@@ -36,9 +37,15 @@ export default function WeeklyInsight({ transactions }: Props) {
     if (loading) return;
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sesi tidak valid. Silakan masuk kembali.');
+
       const res = await fetch('/api/weekly-insight', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ transactions }),
       });
       const data = await res.json();
@@ -95,10 +102,10 @@ export default function WeeklyInsight({ transactions }: Props) {
         </div>
         <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--accent-green-light)', marginBottom: 2 }}>
-            Insight Mingguan AI
+            Insight Mingguan AI Lokal
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-            {loading ? 'Menganalisis pola pengeluaran minggu ini...' : 'Klik untuk melihat analisis pengeluaran dari AI'}
+            {loading ? 'Menganalisis pola pengeluaran minggu ini...' : 'Klik untuk melihat analisis dari AI Python lokal'}
           </p>
         </div>
         {!loading && (

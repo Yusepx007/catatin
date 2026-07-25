@@ -10,6 +10,7 @@ import CategoryChart from '@/components/CategoryChart';
 import BudgetCard from '@/components/BudgetCard';
 import WeeklyInsight from '@/components/WeeklyInsight';
 import TransactionList from '@/components/TransactionList';
+import AdminUserPanel from '@/components/AdminUserPanel';
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,17 @@ export default function DashboardPage() {
       if (!session) { router.push('/'); return; }
       setUserId(session.user.id);
       setUserEmail(session.user.email || '');
-      await fetchData(session.user.id, currentMonth);
+      await Promise.all([
+        fetchData(session.user.id, currentMonth),
+        fetch('/api/admin/me', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            setUserRole(data?.user?.role === 'admin' ? 'admin' : 'user');
+          })
+          .catch(() => setUserRole('user')),
+      ]);
       setLoading(false);
     };
     init();
@@ -293,7 +305,9 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600 }}>{userEmail || 'Pengguna'}</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>Akun aktif</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                  {userRole === 'admin' ? 'Admin aktif' : 'Akun aktif'}
+                </p>
               </div>
             </div>
 
@@ -452,6 +466,8 @@ export default function DashboardPage() {
         </div>
 
         <aside className="dashboard-right">
+          {userRole === 'admin' && <AdminUserPanel />}
+
           <BudgetCard
             totalSpent={totalSpent}
             monthlyLimit={monthlyLimit}

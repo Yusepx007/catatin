@@ -4,6 +4,53 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- User profiles and roles
+CREATE TABLE IF NOT EXISTS public.profiles (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION public.is_admin(target_user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE user_id = target_user_id
+      AND role = 'admin'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE PLPGSQL
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (user_id, email, role)
+  VALUES (NEW.id, COALESCE(NEW.email, ''), 'user')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+INSERT INTO public.profiles (user_id, email, role)
+SELECT id, COALESCE(email, ''), 'user'
+FROM auth.users
+ON CONFLICT (user_id) DO NOTHING;
+
 -- Transactions table
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -27,30 +74,63 @@ CREATE TABLE IF NOT EXISTS public.budgets (
 );
 
 -- Enable Row Level Security
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies: users can only see/modify their own data
+-- RLS Policies: users can only see/modify their own data.
+-- Admin-only profile writes are mostly handled by server-side service role endpoints.
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+CREATE POLICY "Users can view own profile"
+  ON public.profiles FOR SELECT
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view profiles" ON public.profiles;
+CREATE POLICY "Admins can view profiles"
+  ON public.profiles FOR SELECT
+  USING (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Admins can insert profiles" ON public.profiles;
+CREATE POLICY "Admins can insert profiles"
+  ON public.profiles FOR INSERT
+  WITH CHECK (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Admins can update profiles" ON public.profiles;
+CREATE POLICY "Admins can update profiles"
+  ON public.profiles FOR UPDATE
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Users can view own transactions" ON public.transactions;
 CREATE POLICY "Users can view own transactions"
   ON public.transactions FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own transactions" ON public.transactions;
 CREATE POLICY "Users can insert own transactions"
   ON public.transactions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own transactions" ON public.transactions;
 CREATE POLICY "Users can delete own transactions"
   ON public.transactions FOR DELETE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can view own budgets" ON public.budgets;
 CREATE POLICY "Users can view own budgets"
   ON public.budgets FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own budgets" ON public.budgets;
 CREATE POLICY "Users can insert own budgets"
   ON public.budgets FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own budgets" ON public.budgets;
 CREATE POLICY "Users can update own budgets"
   ON public.budgets FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- After running this schema, promote the first admin once:
+-- UPDATE public.profiles SET role = 'admin' WHERE email = 'admin@example.com';

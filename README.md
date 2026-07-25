@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Catatin
 
-## Getting Started
+Catatin adalah aplikasi pencatat pengeluaran harian berbasis Next.js dan Supabase. Input pengeluaran ditulis seperti chat, lalu AI lokal berbasis Python membaca nominal, kategori, tanggal, dan deskripsi transaksi.
 
-First, run the development server:
+## Menjalankan aplikasi
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Salin `.env.example` ke `.env.local`, lalu isi:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` untuk endpoint admin
 
-## Learn More
+## AI lokal Python
 
-To learn more about Next.js, take a look at the following resources:
+Engine AI berada di `ai/local_ai.py` dan dipanggil oleh route API Next.js lewat `src/lib/local-ai.ts`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Fitur yang sudah didukung:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Parsing nominal seperti `25rb`, `1.5jt`, `Rp 25.000`, dan angka biasa.
+- Tanggal relatif seperti `tadi pagi`, `kemarin`, `kemarin lusa`, `2 hari lalu`, dan `minggu lalu`.
+- Kategori otomatis untuk makanan, transportasi, belanja, hiburan, kesehatan, pendidikan, tagihan, dan lainnya.
+- Insight mingguan berbasis ringkasan transaksi.
 
-## Deploy on Vercel
+Secara default aplikasi memakai command `python`. Jika perlu memakai binary lain, set environment variable:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+PYTHON_BIN=python3
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API utama
+
+- `POST /api/parse-transaction`
+- `POST /api/weekly-insight`
+
+Kedua endpoint tidak membutuhkan `GEMINI_API_KEY` karena sudah memakai AI lokal Python.
+
+## Admin dan keamanan
+
+Jalankan `supabase/schema.sql` di Supabase SQL Editor untuk membuat table `profiles`, role `admin/user`, trigger profile otomatis, dan RLS policy.
+
+Setelah schema dijalankan, promote admin pertama:
+
+```sql
+UPDATE public.profiles
+SET role = 'admin'
+WHERE email = 'email-admin@domain.com';
+```
+
+Untuk mode produksi yang lebih aman, matikan public signup di Supabase Dashboard, lalu buat user baru hanya dari panel admin di dashboard Catatin.
+
+Perbaikan keamanan yang aktif:
+
+- Endpoint AI wajib memakai bearer token session Supabase.
+- Endpoint AI diberi rate limit per user.
+- Endpoint admin hanya bisa dipakai role `admin`.
+- Pembuatan user dilakukan server-side dengan `SUPABASE_SERVICE_ROLE_KEY`, tidak dari browser.
+- RLS membatasi transaksi dan budget ke pemilik datanya.
