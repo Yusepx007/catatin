@@ -408,11 +408,11 @@ export default function DashboardPage() {
                   letterSpacing: '-0.03em',
                   marginBottom: 4,
                 }}>
-                  {activeTab === 'transactions' ? 'CRUD transaksi bulan ini' : 'Pola belanja per kategori'}
+                  {activeTab === 'transactions' ? 'Riwayat pengeluaran bulan ini' : 'Pola belanja per kategori'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                   {activeTab === 'transactions'
-                    ? 'Tambah lewat menu Catat, lalu edit atau hapus dari daftar ini.'
+                    ? 'Lihat, rapikan, edit, atau hapus catatan yang sudah tersimpan.'
                     : now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                 </p>
               </div>

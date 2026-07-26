@@ -20,7 +20,7 @@ const mvpFeatures = [
   ['Auth pengguna', 'Daftar dan login mandiri dengan Supabase Auth.'],
   ['AI parser transaksi', 'Input bebas seperti chat, nominal dan kategori langsung dibaca.'],
   ['Dashboard realtime', 'Ringkasan, grafik kategori, budget, dan insight mingguan.'],
-  ['CRUD transaksi', 'Tambah, lihat, edit, dan hapus catatan pengeluaran.'],
+  ['Riwayat pengeluaran', 'Lihat, edit, dan hapus catatan pengeluaran kapan saja.'],
 ];
 
 export default function HomePage() {
@@ -117,7 +117,7 @@ export default function HomePage() {
         <div>
           <span>Supabase Auth + Database</span>
           <span>Groq API + fallback AI</span>
-          <span>CRUD transaksi</span>
+          <span>Riwayat transaksi</span>
         </div>
       </footer>
     </>
