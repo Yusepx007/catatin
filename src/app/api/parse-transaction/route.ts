@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     if (message.includes('JSON') || message.includes('parse') || message.includes('SyntaxError')) {
       return NextResponse.json(
-        { error: 'AI lokal gagal membaca format transaksi. Coba tulis lebih spesifik, contoh: "beli kopi 25rb tadi pagi".' },
+        { error: 'Catatin belum bisa membaca format transaksi. Coba tulis lebih spesifik, contoh: "beli kopi 25rb tadi pagi".' },
         { status: 422 }
       );
     }

@@ -105,7 +105,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     const parsedData = parseTransactionWithRules(rawText);
     addMessage({
       type: 'confirm',
-      content: 'API sedang tidak tersambung, jadi Catatin memakai parser bawaan. Apakah datanya sudah benar?',
+      content: 'Transaksi berhasil dibaca. Apakah datanya sudah benar?',
       rawText,
       parsedData,
     });
@@ -284,8 +284,8 @@ export default function ChatInput({ onTransactionSaved }: Props) {
           }}>
             {countdown > 0
               ? `Tunggu ${countdown} detik sebelum kirim lagi`
-              : isLoading ? 'AI lokal sedang memproses...'
-              : 'Ketik bebas, AI lokal yang parse'}
+              : isLoading ? 'Catatin sedang membaca transaksi...'
+              : 'Ketik bebas, Catatin yang rapikan'}
           </p>
         </div>
       </div>
