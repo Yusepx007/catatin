@@ -49,9 +49,8 @@ export default function HomePage() {
           <div className="nav-links">
             <a className="nav-link" href="#fitur">Fitur</a>
             <a className="nav-link" href="#alur">Alur</a>
-            <Link className="nav-link" href="/login">Masuk</Link>
-            <Link className="btn-primary" href="/register" style={{ padding: '9px 14px', fontSize: 13 }}>
-              Daftar
+            <Link className="btn-primary" href="/login" style={{ padding: '9px 14px', fontSize: 13 }}>
+              Masuk / Daftar
             </Link>
           </div>
         </div>
@@ -73,15 +72,6 @@ export default function HomePage() {
                 Tulis pengeluaran seperti sedang chat. Catatin bantu membaca nominal, kategori, dan tanggal
                 secara otomatis, lalu merangkum semuanya ke dashboard yang lebih enak dipantau.
               </p>
-            </div>
-
-            <div className="landing-cta-row">
-              <Link className="btn-primary" href="/register">
-                Mulai gratis
-              </Link>
-              <Link className="btn-secondary" href="/login">
-                Masuk ke akun
-              </Link>
             </div>
 
             <div className="plain-feature-list">
