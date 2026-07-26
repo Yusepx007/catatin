@@ -102,10 +102,11 @@ export default function AuthForm({ mode }: Props) {
           },
         });
         if (error) throw error;
+        await supabase.auth.signOut();
         setMessage('Pendaftaran berhasil. Silakan masuk dengan akun yang baru dibuat.');
         setFullName('');
         setPassword('');
-        setTimeout(() => router.push('/login'), 700);
+        setTimeout(() => router.replace('/login'), 700);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
