@@ -421,6 +421,71 @@ select {
   padding: 14px;
 }
 
+.budget-usage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+  gap: 14px;
+  align-items: stretch;
+  margin-bottom: 10px;
+}
+
+.budget-limit-box {
+  text-align: right;
+  background: rgba(8, 17, 31, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+
+.budget-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.transaction-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+}
+
+.transaction-row.is-editing {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.transaction-info {
+  min-width: 0;
+}
+
+.transaction-amount-block {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.transaction-action-row,
+.transaction-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.transaction-edit-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.transaction-edit-grid-main {
+  grid-template-columns: minmax(0, 1.4fr) 140px;
+}
+
+.transaction-edit-grid-meta {
+  grid-template-columns: minmax(0, 1fr) 150px;
+}
+
 .site-nav {
   position: fixed;
   top: 0;
@@ -871,6 +936,11 @@ select {
   .metric-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   }
+
+  .transaction-edit-grid-main,
+  .transaction-edit-grid-meta {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -939,6 +1009,33 @@ select {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .budget-usage-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-limit-box {
+    text-align: left;
+  }
+
+  .transaction-row {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .transaction-amount-block {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .transaction-action-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .transaction-action-row > button {
+    padding: 7px 10px !important;
   }
 
   .dashboard-main {

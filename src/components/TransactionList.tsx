@@ -118,21 +118,29 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
     });
   };
 
-  const handleSave = async (id: string) => {
+  const handleSave = async (transaction: Transaction) => {
     const amount = Number(draft.amount);
-    if (!draft.description.trim() || !draft.transaction_date || !Number.isFinite(amount) || amount <= 0) return;
+    const description = draft.description.trim().replace(/\s+/g, ' ').slice(0, 120);
+    const category = categories.includes(draft.category) ? draft.category : 'Lainnya';
+    const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(draft.transaction_date);
+
+    if (!description || !isValidDate || !Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) return;
+
+    const safeAmount = Math.round(amount);
+    const id = transaction.id;
     setSavingId(id);
     try {
       const { error } = await supabase
         .from('transactions')
         .update({
-          description: draft.description.trim(),
-          raw_text: draft.description.trim(),
-          amount,
-          category: draft.category,
+          description,
+          raw_text: description,
+          amount: safeAmount,
+          category,
           transaction_date: draft.transaction_date,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', transaction.user_id);
       if (!error) {
         setEditingId(null);
         onDeleted();
@@ -144,11 +152,16 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (transaction: Transaction) => {
     if (!confirm('Hapus transaksi ini?')) return;
+    const id = transaction.id;
     setDeletingId(id);
     try {
-      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', transaction.user_id);
       if (!error) onDeleted();
     } catch (err) {
       console.error('[TransactionList] delete error:', err);
@@ -237,17 +250,14 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                 return (
                   <div
                     key={t.id}
+                    className={`transaction-row ${isEditing ? 'is-editing' : ''}`}
                     style={{
                       background: 'rgba(8, 17, 31, 0.56)',
                       border: '1px solid var(--border)',
                       borderRadius: 18,
                       padding: '13px 14px',
-                      display: 'flex',
-                      alignItems: isEditing ? 'stretch' : 'center',
-                      gap: 11,
                       transition: 'all 0.2s ease',
                       opacity: deletingId === t.id ? 0.4 : 1,
-                      flexDirection: isEditing ? 'column' : 'row',
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget).style.borderColor = 'var(--border-light)';
@@ -260,7 +270,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                   >
                     {isEditing ? (
                       <>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) 140px', gap: 10 }}>
+                        <div className="transaction-edit-grid transaction-edit-grid-main">
                           <input
                             className="input-field"
                             value={draft.description}
@@ -278,7 +288,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                             style={{ padding: '10px 12px', fontSize: 13 }}
                           />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 150px', gap: 10 }}>
+                        <div className="transaction-edit-grid transaction-edit-grid-meta">
                           <select
                             className="input-field"
                             value={draft.category}
@@ -297,7 +307,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                             style={{ padding: '10px 12px', fontSize: 13 }}
                           />
                         </div>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <div className="transaction-edit-actions">
                           <button
                             type="button"
                             className="btn-secondary"
@@ -309,7 +319,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                           <button
                             type="button"
                             className="btn-primary"
-                            onClick={() => handleSave(t.id)}
+                            onClick={() => handleSave(t)}
                             disabled={savingId === t.id}
                             style={{ padding: '8px 12px', fontSize: 12 }}
                           >
@@ -321,7 +331,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                       <>
                         <CategoryInitial category={t.category} />
 
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="transaction-info">
                           <p style={{
                             fontWeight: 500,
                             fontSize: 14,
@@ -337,11 +347,11 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                           </span>
                         </div>
 
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div className="transaction-amount-block">
                           <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
                             Rp {t.amount.toLocaleString('id-ID')}
                           </p>
-                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <div className="transaction-action-row">
                             <button
                               id={`edit-transaction-${t.id}`}
                               onClick={() => startEdit(t)}
@@ -366,7 +376,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                             </button>
                             <button
                               id={`delete-transaction-${t.id}`}
-                              onClick={() => handleDelete(t.id)}
+                              onClick={() => handleDelete(t)}
                               disabled={deletingId === t.id}
                               style={{
                                 background: 'rgba(248, 113, 113, 0.08)',

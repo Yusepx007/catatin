@@ -182,16 +182,16 @@ export default function BudgetCard({
 
       {/* Spent vs limit */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <div className="budget-usage-row">
           <div>
             <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 3 }}>SUDAH DIPAKAI</p>
             <p style={{ fontSize: '1.8rem', fontWeight: 800, color: getAmountColor(), letterSpacing: '-0.04em' }}>
               Rp {totalSpent.toLocaleString('id-ID')}
             </p>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 3 }}>DARI</p>
-            <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+          <div className="budget-limit-box">
+            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 5 }}>LIMIT BULANAN</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
               Rp {monthlyLimit.toLocaleString('id-ID')}
             </p>
           </div>
@@ -209,7 +209,7 @@ export default function BudgetCard({
       </div>
 
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 14 }}>
+      <div className="budget-stats-grid">
         {stats.map((s) => (
           <div key={s.label} style={{
             background: 'rgba(8, 17, 31, 0.56)',

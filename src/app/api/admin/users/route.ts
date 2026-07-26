@@ -12,8 +12,9 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-function normalizeRole(role: unknown): AppRole {
-  return role === 'admin' ? 'admin' : 'user';
+function parseRole(role: unknown): AppRole | null {
+  if (role === 'admin' || role === 'user') return role;
+  return null;
 }
 
 function adminErrorResponse(error: unknown) {
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');
-    const role = normalizeRole(body.role);
+    const role = parseRole(body.role);
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Format email tidak valid.' }, { status: 400 });
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!VALID_ROLES.includes(role)) {
+    if (!role || !VALID_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Role tidak valid.' }, { status: 400 });
     }
 

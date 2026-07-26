@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS full_name TEXT;
 
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_full_name_length_check,
+  ADD CONSTRAINT profiles_full_name_length_check
+    CHECK (full_name IS NULL OR char_length(full_name) <= 80);
+
 CREATE OR REPLACE FUNCTION public.is_admin(target_user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
 LANGUAGE SQL
@@ -76,6 +81,33 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.transactions
+  DROP CONSTRAINT IF EXISTS transactions_category_check,
+  ADD CONSTRAINT transactions_category_check
+    CHECK (category IN (
+      'Makanan & Minuman',
+      'Transportasi',
+      'Belanja',
+      'Hiburan',
+      'Kesehatan',
+      'Pendidikan',
+      'Tagihan & Utilitas',
+      'Lainnya'
+    ));
+
+ALTER TABLE public.transactions
+  DROP CONSTRAINT IF EXISTS transactions_amount_check,
+  ADD CONSTRAINT transactions_amount_check
+    CHECK (amount > 0 AND amount <= 100000000);
+
+ALTER TABLE public.transactions
+  DROP CONSTRAINT IF EXISTS transactions_text_length_check,
+  ADD CONSTRAINT transactions_text_length_check
+    CHECK (
+      char_length(raw_text) <= 500
+      AND (description IS NULL OR char_length(description) <= 120)
+    );
+
 -- Budgets table
 CREATE TABLE IF NOT EXISTS public.budgets (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -85,6 +117,16 @@ CREATE TABLE IF NOT EXISTS public.budgets (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, month)
 );
+
+ALTER TABLE public.budgets
+  DROP CONSTRAINT IF EXISTS budgets_monthly_limit_check,
+  ADD CONSTRAINT budgets_monthly_limit_check
+    CHECK (monthly_limit > 0 AND monthly_limit <= 1000000000);
+
+ALTER TABLE public.budgets
+  DROP CONSTRAINT IF EXISTS budgets_month_format_check,
+  ADD CONSTRAINT budgets_month_format_check
+    CHECK (month ~ '^[0-9]{4}-[0-9]{2}$');
 
 -- Enable Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -122,6 +164,12 @@ CREATE POLICY "Users can view own transactions"
 DROP POLICY IF EXISTS "Users can insert own transactions" ON public.transactions;
 CREATE POLICY "Users can insert own transactions"
   ON public.transactions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own transactions" ON public.transactions;
+CREATE POLICY "Users can update own transactions"
+  ON public.transactions FOR UPDATE
+  USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Users can delete own transactions" ON public.transactions;
