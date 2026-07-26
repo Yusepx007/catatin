@@ -8,9 +8,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
+  full_name TEXT,
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS full_name TEXT;
 
 CREATE OR REPLACE FUNCTION public.is_admin(target_user_id UUID DEFAULT auth.uid())
 RETURNS BOOLEAN
@@ -33,8 +37,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (user_id, email, role)
-  VALUES (NEW.id, COALESCE(NEW.email, ''), 'user')
+  INSERT INTO public.profiles (user_id, email, full_name, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.email, ''),
+    NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'full_name', '')), ''),
+    'user'
+  )
   ON CONFLICT (user_id) DO NOTHING;
 
   RETURN NEW;
@@ -46,8 +55,12 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-INSERT INTO public.profiles (user_id, email, role)
-SELECT id, COALESCE(email, ''), 'user'
+INSERT INTO public.profiles (user_id, email, full_name, role)
+SELECT
+  id,
+  COALESCE(email, ''),
+  NULLIF(TRIM(COALESCE(raw_user_meta_data->>'full_name', '')), ''),
+  'user'
 FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;
 

@@ -13,7 +13,7 @@ import WeeklyInsight from '@/components/WeeklyInsight';
 import TransactionList from '@/components/TransactionList';
 import AdminUserPanel from '@/components/AdminUserPanel';
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+// SVG Icons
 
 function LogoMark() {
   return (
@@ -66,12 +66,13 @@ function IconLogout() {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Main Component
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
   const [userRole, setUserRole] = useState<'admin' | 'user'>('user');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
@@ -123,6 +124,18 @@ export default function DashboardPage() {
         if (!session) { router.push('/'); return; }
         setUserId(session.user.id);
         setUserEmail(session.user.email || '');
+        const metadataName = String(session.user.user_metadata?.full_name || '').trim();
+        const profileRes = await supabase
+          .from('profiles')
+          .select('full_name,email')
+          .eq('user_id', session.user.id)
+          .single();
+        const profileName = String(profileRes.data?.full_name || '').trim();
+        setUserName(
+          profileName ||
+          metadataName ||
+          (session.user.email ? session.user.email.split('@')[0] : '')
+        );
         await Promise.allSettled([
           fetchData(session.user.id, currentMonth),
           fetch('/api/admin/me', {
@@ -149,8 +162,7 @@ export default function DashboardPage() {
   const handleRefresh = () => {
     if (userId) fetchData(userId, currentMonth);
   };
-
-  // ── Quick stats ────────────────────────────────────────────────────────────
+  // Quick stats
   const maxTransaction = monthlyTransactions.length > 0
     ? Math.max(...monthlyTransactions.map((t) => t.amount))
     : 0;
@@ -175,8 +187,7 @@ export default function DashboardPage() {
     { label: 'Rata-rata / transaksi', value: avgPerTransaction > 0 ? `Rp ${avgPerTransaction.toLocaleString('id-ID')}` : '-' },
     { label: 'Hari pengeluaran tertinggi', value: busiestDate },
   ];
-
-  // ── Top category ───────────────────────────────────────────────────────────
+  // Top category
   const topCategory = (() => {
     if (!monthlyTransactions.length) return null;
     const totals = monthlyTransactions.reduce((acc, t) => {
@@ -197,8 +208,7 @@ export default function DashboardPage() {
     'Tagihan & Utilitas': '#f87171',
     'Lainnya': '#94a3b8',
   };
-
-  // ── Loading screen ─────────────────────────────────────────────────────────
+  // Loading screen
   if (loading) {
     return (
       <div style={{
@@ -221,8 +231,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // Render
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header style={{
@@ -263,7 +272,7 @@ export default function DashboardPage() {
               </div>
               <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                 {now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                {userEmail ? ` • ${userEmail}` : ''}
+                {userName ? ` - ${userName}` : userEmail ? ` - ${userEmail}` : ''}
               </span>
             </div>
           </div>
@@ -548,3 +557,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

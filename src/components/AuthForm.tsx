@@ -36,6 +36,7 @@ function getPasswordStrength(password: string): { label: string; color: string; 
 export default function AuthForm({ mode }: Props) {
   const router = useRouter();
   const isLogin = mode === 'login';
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,12 @@ export default function AuthForm({ mode }: Props) {
       return;
     }
 
+    const cleanName = fullName.trim().replace(/\s+/g, ' ');
+    if (!isLogin && cleanName.length < 2) {
+      setError('Nama wajib diisi minimal 2 karakter.');
+      return;
+    }
+
     const passwordError = !isLogin ? validatePassword(password) : null;
     if (passwordError) {
       setError(passwordError);
@@ -88,9 +95,15 @@ export default function AuthForm({ mode }: Props) {
         const { error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
+          options: {
+            data: {
+              full_name: cleanName,
+            },
+          },
         });
         if (error) throw error;
         setMessage('Pendaftaran berhasil. Silakan masuk dengan akun yang baru dibuat.');
+        setFullName('');
         setPassword('');
         setTimeout(() => router.push('/login'), 700);
       }
@@ -161,6 +174,23 @@ export default function AuthForm({ mode }: Props) {
         </div>
 
         <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} noValidate>
+          {!isLogin && (
+            <div>
+              <label htmlFor="name-input" className="field-label">Nama lengkap</label>
+              <input
+                id="name-input"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Nama kamu"
+                required
+                autoComplete="name"
+                className="input-field"
+                maxLength={80}
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="email-input" className="field-label">Alamat Email</label>
             <input
