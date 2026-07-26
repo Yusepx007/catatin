@@ -396,6 +396,8 @@ select {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .dashboard-left,
@@ -408,7 +410,7 @@ select {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 12px;
 }
 
@@ -850,6 +852,25 @@ select {
   .nav-link {
     padding: 8px 10px;
   }
+
+  .dashboard-main {
+    width: min(100% - 24px, 1180px);
+    padding: 16px 0 28px;
+  }
+
+  .dashboard-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .dashboard-actions > button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -921,18 +942,13 @@ select {
   }
 
   .dashboard-main {
-    width: min(100% - 20px, 1180px);
-    padding: 14px 0 24px;
+    width: min(100% - 18px, 1180px);
+    padding: 12px 0 24px;
   }
 
   .dashboard-actions {
-    width: auto;
-    margin-left: auto;
-  }
-
-  .dashboard-actions > div {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
+    margin-left: 0;
   }
 
   .dashboard-actions > button {
