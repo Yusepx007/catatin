@@ -142,23 +142,32 @@ export default function AuthForm({ mode }: Props) {
 
   return (
     <main className="auth-page">
-      <Link href="/" className="auth-brand" aria-label="Kembali ke landing Catatin">
-        <div className="brand-logo">
-          <Image
-            src="/logo.png"
-            alt="Catatin"
-            width={44}
-            height={44}
-            priority
-            className="logo-clean"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-          />
+      <div className="auth-topbar">
+        <Link href="/" className="auth-back-link">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+            <path d="M9.5 12.5 4.5 7.5l5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Kembali
+        </Link>
+
+        <div className="auth-brand">
+          <div className="brand-logo">
+            <Image
+              src="/logo.png"
+              alt="Catatin"
+              width={44}
+              height={44}
+              priority
+              className="logo-clean"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            />
+          </div>
+          <div>
+            <p className="brand-title">Catatin</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Expense tracker berbasis AI</p>
+          </div>
         </div>
-        <div>
-          <p className="brand-title">Catatin</p>
-          <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Expense tracker berbasis AI</p>
-        </div>
-      </Link>
+      </div>
 
       <section className="surface-card auth-card">
         <div style={{ marginBottom: 28 }}>

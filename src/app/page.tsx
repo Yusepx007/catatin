@@ -125,10 +125,6 @@ export default function HomePage() {
 
       <footer className="landing-footer">
         <div>
-          <strong>Catatin</strong>
-          <span>Full-stack MVP untuk pencatatan pengeluaran berbasis AI.</span>
-        </div>
-        <div>
           <span>Supabase Auth + Database</span>
           <span>Groq API + fallback AI</span>
           <span>CRUD transaksi</span>
