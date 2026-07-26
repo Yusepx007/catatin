@@ -100,6 +100,17 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     setMessages((prev) => [...prev, { ...msg, id }]);
   };
 
+  const addFallbackParsedMessage = async (rawText: string) => {
+    const { parseTransactionWithRules } = await import('@/lib/catatin-ai');
+    const parsedData = parseTransactionWithRules(rawText);
+    addMessage({
+      type: 'confirm',
+      content: 'API sedang tidak tersambung, jadi Catatin memakai parser bawaan. Apakah datanya sudah benar?',
+      rawText,
+      parsedData,
+    });
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
@@ -132,7 +143,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         body: JSON.stringify({ rawText: text }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (res.status === 429) {
         // Extract seconds from error message e.g. "Tunggu sekitar 53 detik"
@@ -154,6 +165,22 @@ export default function ChatInput({ onTransactionSaved }: Props) {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      const isNetworkError =
+        msg.toLowerCase().includes('failed to fetch') ||
+        msg.toLowerCase().includes('network') ||
+        msg.toLowerCase().includes('load failed');
+
+      if (isNetworkError) {
+        try {
+          await addFallbackParsedMessage(text);
+          return;
+        } catch (fallbackErr: unknown) {
+          const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : msg;
+          addMessage({ type: 'error', content: fallbackMsg });
+          return;
+        }
+      }
+
       addMessage({ type: 'error', content: msg });
     } finally {
       setIsLoading(false);
