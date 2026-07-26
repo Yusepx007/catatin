@@ -234,7 +234,7 @@ export default function DashboardPage() {
   // Render
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={{
+      <header className="dashboard-header" style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -243,16 +243,7 @@ export default function DashboardPage() {
         background: 'rgba(8, 17, 31, 0.72)',
         borderBottom: '1px solid var(--border)',
       }}>
-        <div style={{
-          width: 'min(1180px, calc(100% - 32px))',
-          margin: '0 auto',
-          padding: '16px 0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 18,
-          flexWrap: 'wrap',
-        }}>
+        <div className="dashboard-nav-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
             <LogoMark />
             <div>
@@ -276,6 +267,24 @@ export default function DashboardPage() {
               </span>
             </div>
           </div>
+
+          <nav className="dashboard-menu" aria-label="Menu dashboard">
+            {[
+              ['overview', 'Ringkasan'],
+              ['record', 'Catat'],
+              ['history', 'Riwayat & Analitik'],
+              ['budget', 'Budget'],
+            ].map(([menu, label]) => (
+              <button
+                key={menu}
+                type="button"
+                className={`dashboard-menu-btn ${activeMenu === menu ? 'active' : ''}`}
+                onClick={() => setActiveMenu(menu as typeof activeMenu)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
           <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button
@@ -301,24 +310,6 @@ export default function DashboardPage() {
       </header>
 
       <div className="dashboard-main">
-        <nav className="dashboard-menu" aria-label="Menu dashboard">
-          {[
-            ['overview', 'Ringkasan'],
-            ['record', 'Catat'],
-            ['history', 'Riwayat & Analitik'],
-            ['budget', 'Budget'],
-          ].map(([menu, label]) => (
-            <button
-              key={menu}
-              type="button"
-              className={`dashboard-menu-btn ${activeMenu === menu ? 'active' : ''}`}
-              onClick={() => setActiveMenu(menu as typeof activeMenu)}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-
         <div className="dashboard-left">
           <section className="surface-card" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{
