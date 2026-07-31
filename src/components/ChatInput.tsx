@@ -1,5 +1,6 @@
 'use client';
 
+import { CATEGORY_CLASSES, CATEGORY_COLORS, isExpenseCategory } from '@/lib/categories';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 type Message = {
@@ -21,30 +22,8 @@ type Props = {
 
 type RateLimit = { seconds: number } | null;
 
-const categoryColors: Record<string, string> = {
-  'Makanan & Minuman': '#fb923c',
-  'Transportasi': '#60a5fa',
-  'Belanja': '#c084fc',
-  'Hiburan': '#f472b6',
-  'Kesehatan': '#34d399',
-  'Pendidikan': '#fbbf24',
-  'Tagihan & Utilitas': '#f87171',
-  'Lainnya': '#94a3b8',
-};
-
-const categoryClass: Record<string, string> = {
-  'Makanan & Minuman': 'cat-food',
-  'Transportasi': 'cat-transport',
-  'Belanja': 'cat-shopping',
-  'Hiburan': 'cat-entertainment',
-  'Kesehatan': 'cat-health',
-  'Pendidikan': 'cat-education',
-  'Tagihan & Utilitas': 'cat-bills',
-  'Lainnya': 'cat-other',
-};
-
 function CategoryDot({ category }: { category: string }) {
-  const color = categoryColors[category] || '#94a3b8';
+  const color = isExpenseCategory(category) ? CATEGORY_COLORS[category] : '#94a3b8';
   return (
     <div style={{
       width: 8,
@@ -338,7 +317,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                     padding: 16,
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <span className={`category-badge ${categoryClass[msg.parsedData.category] || 'cat-other'}`}>
+                      <span className={`category-badge ${isExpenseCategory(msg.parsedData.category) ? CATEGORY_CLASSES[msg.parsedData.category] : 'cat-other'}`}>
                         <CategoryDot category={msg.parsedData.category} />
                         {msg.parsedData.category}
                       </span>

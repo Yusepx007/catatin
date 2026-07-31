@@ -88,10 +88,14 @@ ALTER TABLE public.transactions
       'Makanan & Minuman',
       'Transportasi',
       'Belanja',
+      'Paylater & Cicilan',
+      'Perawatan Diri',
+      'Rumah Tangga',
       'Hiburan',
       'Kesehatan',
       'Pendidikan',
       'Tagihan & Utilitas',
+      'Donasi & Sosial',
       'Lainnya'
     ));
 

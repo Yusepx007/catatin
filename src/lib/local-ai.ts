@@ -1,4 +1,5 @@
 import { generateWeeklyInsightWithRules, parseTransactionWithRules } from '@/lib/catatin-ai';
+import { EXPENSE_CATEGORIES, normalizeExpenseCategory } from '@/lib/categories';
 
 export type ParsedTransaction = {
   category: string;
@@ -14,17 +15,6 @@ type TransactionInput = {
   transaction_date: string;
   description: string;
 };
-
-const VALID_CATEGORIES = [
-  'Makanan & Minuman',
-  'Transportasi',
-  'Belanja',
-  'Hiburan',
-  'Kesehatan',
-  'Pendidikan',
-  'Tagihan & Utilitas',
-  'Lainnya',
-] as const;
 
 function getTodayInJakarta(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -56,9 +46,7 @@ function normalizeParsedTransaction(value: unknown): ParsedTransaction {
   }
 
   const input = value as Partial<ParsedTransaction>;
-  const matchedCategory = VALID_CATEGORIES.find(
-    (category) => category.toLowerCase() === String(input.category ?? '').toLowerCase()
-  );
+  const matchedCategory = normalizeExpenseCategory(String(input.category ?? ''));
   const amount = Math.min(Math.abs(Number(input.amount) || 0), 100_000_000);
   const transactionDate = String(input.transaction_date ?? '').slice(0, 10);
   const description = String(input.description ?? '').trim().slice(0, 50);
@@ -68,7 +56,7 @@ function normalizeParsedTransaction(value: unknown): ParsedTransaction {
   }
 
   return {
-    category: matchedCategory ?? 'Lainnya',
+    category: matchedCategory,
     amount,
     transaction_date: transactionDate,
     description,
@@ -99,7 +87,7 @@ Input: "${rawText}"
 
 Kembalikan HANYA JSON valid:
 {
-  "category": "salah satu: Makanan & Minuman, Transportasi, Belanja, Hiburan, Kesehatan, Pendidikan, Tagihan & Utilitas, Lainnya",
+  "category": "salah satu: ${EXPENSE_CATEGORIES.join(', ')}",
   "amount": angka bulat positif,
   "transaction_date": "YYYY-MM-DD",
   "description": "deskripsi singkat bahasa Indonesia, maks 50 karakter"

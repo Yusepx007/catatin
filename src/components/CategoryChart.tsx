@@ -1,5 +1,6 @@
 'use client';
 
+import { CATEGORY_COLORS, CATEGORY_INITIALS, isExpenseCategory } from '@/lib/categories';
 import {
   BarChart,
   Bar,
@@ -12,28 +13,6 @@ import {
 
 type Props = {
   transactions: Array<{ category: string; amount: number }>;
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'Makanan & Minuman': '#fb923c',
-  'Transportasi': '#60a5fa',
-  'Belanja': '#c084fc',
-  'Hiburan': '#f472b6',
-  'Kesehatan': '#34d399',
-  'Pendidikan': '#fbbf24',
-  'Tagihan & Utilitas': '#f87171',
-  'Lainnya': '#94a3b8',
-};
-
-const categoryInitials: Record<string, string> = {
-  'Makanan & Minuman': 'MK',
-  'Transportasi': 'TR',
-  'Belanja': 'BL',
-  'Hiburan': 'HB',
-  'Kesehatan': 'KS',
-  'Pendidikan': 'PD',
-  'Tagihan & Utilitas': 'TG',
-  'Lainnya': 'LN',
 };
 
 const formatCurrency = (val: number) =>
@@ -61,6 +40,10 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
   }
   return null;
 };
+
+function getCategoryColor(category: string): string {
+  return isExpenseCategory(category) ? CATEGORY_COLORS[category] : '#94a3b8';
+}
 
 export default function CategoryChart({ transactions }: Props) {
   // Aggregate by category
@@ -141,7 +124,7 @@ export default function CategoryChart({ transactions }: Props) {
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={CATEGORY_COLORS[entry.fullName] || '#94a3b8'}
+                  fill={getCategoryColor(entry.fullName)}
                   fillOpacity={0.85}
                 />
               ))}
@@ -154,7 +137,7 @@ export default function CategoryChart({ transactions }: Props) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {categoryData.map((cat) => {
           const pct = Math.round((cat.amount / total) * 100);
-          const color = CATEGORY_COLORS[cat.category] || '#94a3b8';
+          const color = getCategoryColor(cat.category);
           return (
             <div key={cat.category} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
@@ -171,7 +154,7 @@ export default function CategoryChart({ transactions }: Props) {
                 letterSpacing: '0.05em',
                 flexShrink: 0,
               }}>
-                {categoryInitials[cat.category] || 'LN'}
+                {isExpenseCategory(cat.category) ? CATEGORY_INITIALS[cat.category] : 'LN'}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>

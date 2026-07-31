@@ -12,6 +12,7 @@ import BudgetCard from '@/components/BudgetCard';
 import WeeklyInsight from '@/components/WeeklyInsight';
 import TransactionList from '@/components/TransactionList';
 import AdminUserPanel from '@/components/AdminUserPanel';
+import { CATEGORY_COLORS, isExpenseCategory } from '@/lib/categories';
 
 // SVG Icons
 
@@ -198,16 +199,9 @@ export default function DashboardPage() {
     return { name, amount, pct: Math.round((amount / totalSpent) * 100) };
   })();
 
-  const categoryColors: Record<string, string> = {
-    'Makanan & Minuman': '#fb923c',
-    'Transportasi': '#60a5fa',
-    'Belanja': '#c084fc',
-    'Hiburan': '#f472b6',
-    'Kesehatan': '#34d399',
-    'Pendidikan': '#fbbf24',
-    'Tagihan & Utilitas': '#f87171',
-    'Lainnya': '#94a3b8',
-  };
+  const topCategoryColor = topCategory && isExpenseCategory(topCategory.name)
+    ? CATEGORY_COLORS[topCategory.name]
+    : '#94a3b8';
   // Loading screen
   if (loading) {
     return (
@@ -519,13 +513,13 @@ export default function DashboardPage() {
                   width: 52,
                   height: 52,
                   borderRadius: 18,
-                  background: `${categoryColors[topCategory.name] || '#94a3b8'}20`,
-                  border: `1px solid ${categoryColors[topCategory.name] || '#94a3b8'}38`,
+                  background: `${topCategoryColor}20`,
+                  border: `1px solid ${topCategoryColor}38`,
                   display: 'grid',
                   placeItems: 'center',
                   fontSize: 12,
                   fontWeight: 800,
-                  color: categoryColors[topCategory.name] || '#94a3b8',
+                  color: topCategoryColor,
                   letterSpacing: '0.04em',
                   flexShrink: 0,
                 }}>

@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase, Transaction } from '@/lib/supabase';
+import { CATEGORY_CLASSES, CATEGORY_COLORS, CATEGORY_INITIALS, EXPENSE_CATEGORIES, isExpenseCategory } from '@/lib/categories';
 import { useState } from 'react';
 
 type Props = {
@@ -15,51 +16,9 @@ type DraftTransaction = {
   transaction_date: string;
 };
 
-const categories = [
-  'Makanan & Minuman',
-  'Transportasi',
-  'Belanja',
-  'Hiburan',
-  'Kesehatan',
-  'Pendidikan',
-  'Tagihan & Utilitas',
-  'Lainnya',
-];
-
-const categoryColors: Record<string, string> = {
-  'Makanan & Minuman': '#fb923c',
-  'Transportasi': '#60a5fa',
-  'Belanja': '#c084fc',
-  'Hiburan': '#f472b6',
-  'Kesehatan': '#34d399',
-  'Pendidikan': '#fbbf24',
-  'Tagihan & Utilitas': '#f87171',
-  'Lainnya': '#94a3b8',
-};
-
-const categoryClass: Record<string, string> = {
-  'Makanan & Minuman': 'cat-food',
-  'Transportasi': 'cat-transport',
-  'Belanja': 'cat-shopping',
-  'Hiburan': 'cat-entertainment',
-  'Kesehatan': 'cat-health',
-  'Pendidikan': 'cat-education',
-  'Tagihan & Utilitas': 'cat-bills',
-  'Lainnya': 'cat-other',
-};
-
 function CategoryInitial({ category }: { category: string }) {
-  const color = categoryColors[category] || '#94a3b8';
-  const initials: Record<string, string> = {
-    'Makanan & Minuman': 'MK',
-    'Transportasi': 'TR',
-    'Belanja': 'BL',
-    'Hiburan': 'HB',
-    'Kesehatan': 'KS',
-    'Pendidikan': 'PD',
-    'Tagihan & Utilitas': 'TG',
-    'Lainnya': 'LN',
-  };
+  const color = isExpenseCategory(category) ? CATEGORY_COLORS[category] : '#94a3b8';
+  const initials = isExpenseCategory(category) ? CATEGORY_INITIALS[category] : 'LN';
   return (
     <div style={{
       width: 38,
@@ -76,7 +35,7 @@ function CategoryInitial({ category }: { category: string }) {
       letterSpacing: '0.04em',
       flexShrink: 0,
     }}>
-      {initials[category] || 'LN'}
+      {initials}
     </div>
   );
 }
@@ -104,7 +63,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
   const [draft, setDraft] = useState<DraftTransaction>({
     description: '',
     amount: '',
-    category: categories[0],
+    category: EXPENSE_CATEGORIES[0],
     transaction_date: '',
   });
 
@@ -121,7 +80,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
   const handleSave = async (transaction: Transaction) => {
     const amount = Number(draft.amount);
     const description = draft.description.trim().replace(/\s+/g, ' ').slice(0, 120);
-    const category = categories.includes(draft.category) ? draft.category : 'Lainnya';
+    const category = isExpenseCategory(draft.category) ? draft.category : 'Lainnya';
     const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(draft.transaction_date);
 
     if (!description || !isValidDate || !Number.isFinite(amount) || amount <= 0 || amount > 100_000_000) return;
@@ -295,7 +254,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                             onChange={(event) => setDraft((prev) => ({ ...prev, category: event.target.value }))}
                             style={{ padding: '10px 12px', fontSize: 13 }}
                           >
-                            {categories.map((category) => (
+                            {EXPENSE_CATEGORIES.map((category) => (
                               <option key={category} value={category}>{category}</option>
                             ))}
                           </select>
@@ -342,7 +301,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                           }}>
                             {t.description}
                           </p>
-                          <span className={`category-badge ${categoryClass[t.category] || 'cat-other'}`} style={{ fontSize: 10 }}>
+                          <span className={`category-badge ${isExpenseCategory(t.category) ? CATEGORY_CLASSES[t.category] : 'cat-other'}`} style={{ fontSize: 10 }}>
                             {t.category}
                           </span>
                         </div>

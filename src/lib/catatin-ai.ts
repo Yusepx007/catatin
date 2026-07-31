@@ -1,3 +1,5 @@
+import { CATEGORY_KEYWORDS } from '@/lib/categories';
+
 export type ParsedTransaction = {
   category: string;
   amount: number;
@@ -10,110 +12,6 @@ type TransactionInput = {
   amount: number;
   transaction_date: string;
   description: string;
-};
-
-const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  'Makanan & Minuman': [
-    'makan',
-    'minum',
-    'kopi',
-    'nasi',
-    'mie',
-    'mi ',
-    'ayam',
-    'bakso',
-    'sate',
-    'seblak',
-    'warteg',
-    'resto',
-    'restoran',
-    'cafe',
-    'kafe',
-    'roti',
-    'snack',
-    'cemilan',
-    'teh',
-    'es ',
-  ],
-  Transportasi: [
-    'grab',
-    'gojek',
-    'ojol',
-    'taksi',
-    'bus',
-    'mrt',
-    'lrt',
-    'angkot',
-    'kereta',
-    'bensin',
-    'parkir',
-    'tol',
-    'transport',
-    'naik',
-  ],
-  Belanja: [
-    'shopee',
-    'tokopedia',
-    'lazada',
-    'marketplace',
-    'baju',
-    'celana',
-    'sepatu',
-    'tas',
-    'barang',
-    'skincare',
-    'sabun',
-    'laundry',
-    'fotocopy',
-    'print',
-  ],
-  Hiburan: [
-    'spotify',
-    'netflix',
-    'bioskop',
-    'game',
-    'konser',
-    'nongkrong',
-    'hiburan',
-    'youtube',
-    'cinema',
-  ],
-  Kesehatan: [
-    'obat',
-    'dokter',
-    'klinik',
-    'rumah sakit',
-    'vitamin',
-    'apotek',
-    'periksa',
-    'masker',
-  ],
-  Pendidikan: [
-    'buku',
-    'kampus',
-    'kuliah',
-    'kelas',
-    'kursus',
-    'sekolah',
-    'spp',
-    'modul',
-    'belajar',
-  ],
-  'Tagihan & Utilitas': [
-    'listrik',
-    'air',
-    'pdam',
-    'wifi',
-    'internet',
-    'pulsa',
-    'kuota',
-    'kost',
-    'kos',
-    'kontrakan',
-    'tagihan',
-    'sewa',
-    'bpjs',
-  ],
 };
 
 const MONTHS: Record<string, number> = {
@@ -338,10 +236,14 @@ export function generateWeeklyInsightWithRules(transactions: TransactionInput[])
     'Makanan & Minuman': 'coba tetapkan limit makan harian',
     Transportasi: 'cek opsi rute atau jadwal yang lebih hemat',
     Belanja: 'tunda belanja non-wajib selama 24 jam',
+    'Paylater & Cicilan': 'cek jatuh tempo dan hindari cicilan baru dulu',
+    'Perawatan Diri': 'bedakan kebutuhan rutin dan belanja perawatan impulsif',
+    'Rumah Tangga': 'buat daftar belanja rumah agar tidak dobel beli',
     Hiburan: 'pilih satu langganan utama minggu ini',
     Kesehatan: 'sisihkan dana kesehatan agar tidak mengganggu budget lain',
     Pendidikan: 'pisahkan kebutuhan belajar dari belanja impulsif',
     'Tagihan & Utilitas': 'catat tanggal jatuh tempo agar cashflow lebih rapi',
+    'Donasi & Sosial': 'tetapkan pos sosial bulanan agar tetap terukur',
     Lainnya: 'beri deskripsi lebih detail agar pola pengeluaran makin jelas',
   };
 
