@@ -169,7 +169,7 @@ export default function AdminUserPanel() {
                 padding: '10px 12px',
                 borderRadius: 14,
                 border: '1px solid var(--border)',
-                background: 'rgba(8, 17, 31, 0.52)',
+                background: 'rgba(248, 250, 252, 0.9)',
               }}
             >
               <span style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' }}>

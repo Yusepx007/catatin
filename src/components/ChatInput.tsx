@@ -237,7 +237,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        background: 'rgba(8, 17, 31, 0.38)',
+        background: 'rgba(248, 250, 252, 0.9)',
       }}>
         <div style={{
           width: 40,
@@ -277,7 +277,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         display: 'flex',
         flexDirection: 'column',
         gap: 12,
-        background: 'linear-gradient(180deg, rgba(8, 17, 31, 0.18), rgba(8, 17, 31, 0.02))',
+        background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.96))',
       }}>
         {messages.map((msg) => (
           <div key={msg.id} style={{
@@ -311,7 +311,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                   </p>
                   {/* Result card */}
                   <div style={{
-                    background: 'rgba(8, 17, 31, 0.72)',
+                    background: 'rgba(255, 255, 255, 0.92)',
                     border: '1px solid var(--border-light)',
                     borderRadius: 16,
                     padding: 16,
@@ -392,7 +392,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         display: 'flex',
         gap: 8,
         flexWrap: 'wrap',
-        background: 'rgba(8, 17, 31, 0.32)',
+        background: 'rgba(248, 250, 252, 0.86)',
       }}>
         {examples.map((ex) => (
           <button
@@ -460,7 +460,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         padding: '14px',
         display: 'flex',
         gap: 10,
-        background: 'rgba(8, 17, 31, 0.56)',
+        background: 'rgba(248, 250, 252, 0.9)',
         borderTop: countdown > 0 ? 'none' : '1px solid var(--border)',
       }}>
         <input
@@ -474,7 +474,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
           maxLength={500}
           className="input-field"
           style={{
-            background: 'rgba(8, 17, 31, 0.84)',
+            background: '#ffffff',
             fontSize: 14,
             opacity: countdown > 0 ? 0.5 : 1,
             cursor: countdown > 0 ? 'not-allowed' : 'text',

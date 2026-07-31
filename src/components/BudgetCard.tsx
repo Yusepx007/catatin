@@ -150,7 +150,7 @@ export default function BudgetCard({
         <div style={{
           marginBottom: 14,
           padding: 12,
-          background: 'rgba(8, 17, 31, 0.56)',
+          background: 'rgba(248, 250, 252, 0.9)',
           borderRadius: 16,
           border: '1px solid var(--border)',
           display: 'flex',
@@ -166,7 +166,7 @@ export default function BudgetCard({
             min={1}
             max={1000000000}
             className="input-field"
-            style={{ background: 'rgba(8, 17, 31, 0.84)', fontSize: 13, padding: '10px 12px' }}
+            style={{ background: '#ffffff', fontSize: 13, padding: '10px 12px' }}
           />
           <button
             id="save-budget-btn"
@@ -212,7 +212,7 @@ export default function BudgetCard({
       <div className="budget-stats-grid">
         {stats.map((s) => (
           <div key={s.label} style={{
-            background: 'rgba(8, 17, 31, 0.56)',
+            background: 'rgba(248, 250, 252, 0.9)',
             borderRadius: 16,
             padding: '12px 12px',
             border: s.danger ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--border)',

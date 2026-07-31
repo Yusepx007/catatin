@@ -135,7 +135,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
         <div style={{
           width: 56,
           height: 56,
-          background: 'rgba(8, 17, 31, 0.58)',
+          background: 'rgba(248, 250, 252, 0.9)',
           border: '1px solid var(--border)',
           borderRadius: 18,
           display: 'flex',
@@ -211,7 +211,7 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                     key={t.id}
                     className={`transaction-row ${isEditing ? 'is-editing' : ''}`}
                     style={{
-                      background: 'rgba(8, 17, 31, 0.56)',
+                      background: 'rgba(255, 255, 255, 0.92)',
                       border: '1px solid var(--border)',
                       borderRadius: 18,
                       padding: '13px 14px',
@@ -220,11 +220,11 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
                     }}
                     onMouseEnter={(e) => {
                       (e.currentTarget).style.borderColor = 'var(--border-light)';
-                      (e.currentTarget).style.background = 'rgba(12, 21, 38, 0.84)';
+                      (e.currentTarget).style.background = 'rgba(248, 250, 252, 0.96)';
                     }}
                     onMouseLeave={(e) => {
                       (e.currentTarget).style.borderColor = 'var(--border)';
-                      (e.currentTarget).style.background = 'rgba(8, 17, 31, 0.56)';
+                      (e.currentTarget).style.background = 'rgba(255, 255, 255, 0.92)';
                     }}
                   >
                     {isEditing ? (

@@ -26,7 +26,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<
   if (active && payload && payload.length) {
     return (
       <div style={{
-        background: 'var(--bg-card)',
+        background: 'var(--bg-card-strong)',
         border: '1px solid var(--border-light)',
         borderRadius: 10,
         padding: '10px 14px',
@@ -73,7 +73,7 @@ export default function CategoryChart({ transactions }: Props) {
           borderRadius: 18,
           display: 'grid',
           placeItems: 'center',
-          background: 'rgba(8, 17, 31, 0.58)',
+          background: 'rgba(248, 250, 252, 0.9)',
           border: '1px solid var(--border)',
         }}>
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -101,7 +101,7 @@ export default function CategoryChart({ transactions }: Props) {
         marginBottom: 24,
         padding: '12px 12px 4px',
         borderRadius: 18,
-        background: 'rgba(8, 17, 31, 0.46)',
+        background: 'rgba(248, 250, 252, 0.9)',
         border: '1px solid var(--border)',
       }}>
         <ResponsiveContainer width="100%" height="100%">

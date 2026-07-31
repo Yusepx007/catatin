@@ -234,7 +234,7 @@ export default function DashboardPage() {
         zIndex: 50,
         backdropFilter: 'blur(18px)',
         WebkitBackdropFilter: 'blur(18px)',
-        background: 'rgba(8, 17, 31, 0.72)',
+        background: 'rgba(255, 255, 255, 0.84)',
         borderBottom: '1px solid var(--border)',
       }}>
         <div className="dashboard-nav-inner">
@@ -335,7 +335,7 @@ export default function DashboardPage() {
                 minWidth: 220,
                 padding: 18,
                 borderRadius: 20,
-                background: 'rgba(8, 17, 31, 0.58)',
+                background: 'rgba(248, 250, 252, 0.9)',
                 border: '1px solid var(--border)',
               }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>Progress budget</p>
@@ -407,7 +407,7 @@ export default function DashboardPage() {
                 gap: 6,
                 padding: 4,
                 borderRadius: 16,
-                background: 'rgba(8, 17, 31, 0.56)',
+                background: 'rgba(248, 250, 252, 0.9)',
                 border: '1px solid var(--border)',
               }}>
                 {(['transactions', 'analytics'] as const).map((tab) => (
@@ -429,9 +429,9 @@ export default function DashboardPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: 8,
-                      background: activeTab === tab ? 'rgba(19, 31, 53, 0.96)' : 'transparent',
+                      background: activeTab === tab ? '#ffffff' : 'transparent',
                       color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
-                      boxShadow: activeTab === tab ? 'inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 26px rgba(2,6,23,0.2)' : 'none',
+                      boxShadow: activeTab === tab ? '0 10px 26px rgba(15,23,42,0.08)' : 'none',
                     }}
                   >
                     {tab === 'transactions' ? <><IconList /> Riwayat</> : <><IconChart /> Analitik</>}
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                   alignItems: 'center',
                   gap: 12,
                   padding: '12px 14px',
-                  background: 'rgba(8, 17, 31, 0.56)',
+                  background: 'rgba(248, 250, 252, 0.9)',
                   borderRadius: 16,
                   border: '1px solid var(--border)',
                 }}>
@@ -492,7 +492,7 @@ export default function DashboardPage() {
 
           {topCategory && (
             <section style={{
-              background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.76))',
+              background: 'linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(255, 255, 255, 0.98))',
               border: '1px solid rgba(245, 158, 11, 0.22)',
               borderRadius: 24,
               padding: 22,
