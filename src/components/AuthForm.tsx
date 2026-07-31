@@ -127,15 +127,15 @@ export default function AuthForm({ mode }: Props) {
   if (checkingSession) {
     return (
       <div className="auth-page">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div className="auth-loading">
           <div className="animate-spin-slow" style={{
             width: 40,
             height: 40,
-            border: '3px solid var(--border)',
+            border: '3px solid rgba(15, 23, 42, 0.12)',
             borderTopColor: 'var(--accent-green)',
             borderRadius: '50%',
           }} />
-          <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Memuat...</p>
+          <p>Memuat...</p>
         </div>
       </div>
     );
@@ -143,162 +143,200 @@ export default function AuthForm({ mode }: Props) {
 
   return (
     <main className="auth-page">
-      <div className="auth-topbar">
-        <Link href="/" className="auth-back-link">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-            <path d="M9.5 12.5 4.5 7.5l5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Kembali
-        </Link>
-
-        <div className="auth-brand">
-          <div className="brand-logo">
-            <Image
-              src="/logo.png"
-              alt="Catatin"
-              width={44}
-              height={44}
-              priority
-              className="logo-clean"
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
-          </div>
+      <div className="auth-shell">
+        <section className="auth-side-panel" aria-label="Tentang Catatin">
           <div>
-            <p className="brand-title">Catatin</p>
-            <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Expense tracker berbasis AI</p>
-          </div>
-        </div>
-      </div>
-
-      <section className="surface-card auth-card">
-        <div style={{ marginBottom: 28 }}>
-          <p className="section-label" style={{ marginBottom: 12 }}>Akses akun</p>
-          <h1 className="auth-title">
-            {isLogin ? 'Masuk ke workspace kamu' : 'Buat akun baru'}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-            {isLogin
-              ? 'Lanjutkan pencatatan dan pantau pengeluaran bulan ini.'
-              : 'Daftar gratis untuk mulai mencatat tanpa setup yang ribet.'}
-          </p>
-        </div>
-
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} noValidate>
-          {!isLogin && (
-            <div>
-              <label htmlFor="name-input" className="field-label">Nama lengkap</label>
-              <input
-                id="name-input"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nama kamu"
-                required
-                autoComplete="name"
-                className="input-field"
-                maxLength={80}
-              />
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="email-input" className="field-label">Alamat Email</label>
-            <input
-              id="email-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama@email.com"
-              required
-              autoComplete="email"
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password-input" className="field-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                id="password-input"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isLogin ? 'Masukkan password' : `Minimal ${MIN_PASSWORD_LENGTH} karakter`}
-                required
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
-                minLength={isLogin ? 1 : MIN_PASSWORD_LENGTH}
-                className="input-field"
-                style={{ paddingRight: 94 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="password-toggle"
-                tabIndex={-1}
-              >
-                {showPassword ? 'Sembunyikan' : 'Tampilkan'}
-              </button>
-            </div>
-
-            {!isLogin && password.length > 0 && strength && (
-              <div style={{ marginTop: 10 }}>
-                <div className="password-strength-track">
-                  <div style={{
-                    height: '100%',
-                    width: strength.width,
-                    background: strength.color,
-                    borderRadius: 999,
-                    transition: 'width 0.3s ease, background 0.3s ease',
-                  }} />
-                </div>
-                <p style={{ fontSize: 11, color: strength.color, marginTop: 6 }}>
-                  Kekuatan password: {strength.label}
-                </p>
+            <Link href="/" className="auth-brand auth-brand-light" aria-label="Kembali ke Catatin">
+              <div className="brand-logo auth-logo">
+                <Image
+                  src="/logo.png"
+                  alt="Catatin"
+                  width={44}
+                  height={44}
+                  priority
+                  className="logo-clean"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                />
               </div>
-            )}
+              <div>
+                <p className="brand-title">Catatin</p>
+                <p>Expense tracker berbasis AI</p>
+              </div>
+            </Link>
+
+            <div className="auth-side-copy">
+              <p className="auth-eyebrow">Workspace keuangan pribadi</p>
+              <h2>{isLogin ? 'Lanjut pantau pengeluaranmu.' : 'Mulai catat tanpa ribet setup.'}</h2>
+              <p>
+                Tulis pengeluaran seperti chat, Catatin bantu merapikan nominal,
+                kategori, dan tanggal ke dashboard yang mudah dipantau.
+              </p>
+            </div>
+
+            <div className="auth-benefit-list">
+              {[
+                'Input transaksi cukup satu kalimat',
+                'Budget dan riwayat tersimpan rapi',
+                'Kategori pengeluaran otomatis terbaca',
+              ].map((item) => (
+                <div key={item}>
+                  <span>
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                      <path d="M2 7l4 4 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {error && <div className="auth-alert auth-alert-error">{error}</div>}
-          {message && <div className="auth-alert auth-alert-success">{message}</div>}
+          <div className="auth-preview-card">
+            <div>
+              <span>Bulan ini</span>
+              <strong>Rp 820.000</strong>
+            </div>
+            <div className="auth-preview-progress">
+              <span />
+            </div>
+            <p>42% dari budget sudah dipakai</p>
+          </div>
+        </section>
 
-          <button
-            id="auth-submit-btn"
-            type="submit"
-            disabled={loading}
-            className="btn-primary"
-            style={{ marginTop: 6, minHeight: 50, fontSize: 15 }}
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin-slow" style={{
-                  width: 16,
-                  height: 16,
-                  border: '2px solid rgba(255,255,255,0.3)',
-                  borderTopColor: 'white',
-                  borderRadius: '50%',
-                }} />
-                Memproses...
-              </>
-            ) : isLogin ? 'Masuk ke Dashboard' : 'Buat Akun Gratis'}
-          </button>
-        </form>
-
-        <div style={{ marginTop: 18 }}>
-          <div className="soft-divider" />
-          <p style={{
-            color: 'var(--text-secondary)',
-            fontSize: 13,
-            lineHeight: 1.6,
-            marginTop: 18,
-            textAlign: 'center',
-          }}>
-            {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
-            <Link href={isLogin ? '/register' : '/login'} style={{ color: 'var(--accent-green-light)', fontWeight: 700 }}>
-              {isLogin ? 'Daftar sekarang' : 'Masuk'}
+        <section className="auth-form-panel">
+          <div className="auth-topbar">
+            <Link href="/" className="auth-back-link">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <path d="M9.5 12.5 4.5 7.5l5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Kembali
             </Link>
-          </p>
-        </div>
-      </section>
+          </div>
+
+          <div className="auth-card">
+            <div className="auth-card-header">
+              <p className="section-label">Akses akun</p>
+              <h1 className="auth-title">
+                {isLogin ? 'Masuk ke Catatin' : 'Buat akun Catatin'}
+              </h1>
+              <p>
+                {isLogin
+                  ? 'Lanjutkan pencatatan dan pantau pengeluaran bulan ini.'
+                  : 'Daftar gratis untuk mulai mencatat pengeluaran harian.'}
+              </p>
+            </div>
+
+            <form onSubmit={handleAuth} className="auth-form" noValidate>
+              {!isLogin && (
+                <div>
+                  <label htmlFor="name-input" className="field-label">Nama lengkap</label>
+                  <input
+                    id="name-input"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nama kamu"
+                    required
+                    autoComplete="name"
+                    className="input-field"
+                    maxLength={80}
+                  />
+                </div>
+              )}
+
+            <div>
+              <label htmlFor="email-input" className="field-label">Alamat Email</label>
+              <input
+                id="email-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
+                required
+                autoComplete="email"
+                className="input-field"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password-input" className="field-label">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="password-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isLogin ? 'Masukkan password' : `Minimal ${MIN_PASSWORD_LENGTH} karakter`}
+                  required
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  minLength={isLogin ? 1 : MIN_PASSWORD_LENGTH}
+                  className="input-field"
+                  style={{ paddingRight: 112 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="password-toggle"
+                  tabIndex={-1}
+                >
+                  {showPassword ? 'Sembunyikan' : 'Tampilkan'}
+                </button>
+              </div>
+
+              {!isLogin && password.length > 0 && strength && (
+                <div style={{ marginTop: 10 }}>
+                  <div className="password-strength-track">
+                    <div style={{
+                      height: '100%',
+                      width: strength.width,
+                      background: strength.color,
+                      borderRadius: 999,
+                      transition: 'width 0.3s ease, background 0.3s ease',
+                    }} />
+                  </div>
+                  <p style={{ fontSize: 11, color: strength.color, marginTop: 6 }}>
+                    Kekuatan password: {strength.label}
+                  </p>
+                </div>
+              )}
+            </div>
+
+              {error && <div className="auth-alert auth-alert-error">{error}</div>}
+              {message && <div className="auth-alert auth-alert-success">{message}</div>}
+
+              <button
+                id="auth-submit-btn"
+                type="submit"
+                disabled={loading}
+                className="btn-primary auth-submit-btn"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin-slow" style={{
+                      width: 16,
+                      height: 16,
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTopColor: 'white',
+                      borderRadius: '50%',
+                    }} />
+                    Memproses...
+                  </>
+                ) : isLogin ? 'Masuk ke Dashboard' : 'Buat Akun Gratis'}
+              </button>
+            </form>
+
+            <div className="auth-switch">
+              <div className="soft-divider" />
+              <p>
+                {isLogin ? 'Belum punya akun? ' : 'Sudah punya akun? '}
+                <Link href={isLogin ? '/register' : '/login'}>
+                  {isLogin ? 'Daftar sekarang' : 'Masuk'}
+                </Link>
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
