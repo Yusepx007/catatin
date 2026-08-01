@@ -95,7 +95,7 @@ export default function AdminUserPanel() {
     <section className="surface-card" style={{ padding: 20 }}>
       <div style={{ marginBottom: 16 }}>
         <p className="section-label" style={{ marginBottom: 10 }}>Admin</p>
-        <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em', marginBottom: 4 }}>
+        <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: 0, lineHeight: 1.3, marginBottom: 4 }}>
           Tambah user
         </h3>
         <p style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>

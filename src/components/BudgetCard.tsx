@@ -109,7 +109,7 @@ export default function BudgetCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
           <p className="section-label" style={{ marginBottom: 10 }}>Budget control</p>
-          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 4, letterSpacing: '-0.03em' }}>Budget Bulan Ini</h3>
+          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 4, letterSpacing: 0, lineHeight: 1.3 }}>Budget Bulan Ini</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
             {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
           </p>
@@ -185,7 +185,7 @@ export default function BudgetCard({
         <div className="budget-usage-row">
           <div>
             <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 3 }}>SUDAH DIPAKAI</p>
-            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: getAmountColor(), letterSpacing: '-0.04em' }}>
+            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: getAmountColor(), letterSpacing: 0, lineHeight: 1.15 }}>
               Rp {totalSpent.toLocaleString('id-ID')}
             </p>
           </div>

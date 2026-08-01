@@ -242,7 +242,7 @@ export default function DashboardPage() {
             <LogoMark />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
-                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em' }}>Catatin</span>
+                <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: 0 }}>Catatin</span>
                 <span style={{
                   padding: '4px 10px',
                   borderRadius: 999,
@@ -320,7 +320,8 @@ export default function DashboardPage() {
                   fontSize: 'clamp(1.8rem, 3vw, 2.35rem)',
                   fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
                   fontWeight: 800,
-                  letterSpacing: '-0.04em',
+                  letterSpacing: 0,
+                  lineHeight: 1.18,
                   marginBottom: 8,
                 }}>
                   Kelola pengeluaran dengan tampilan yang lebih fokus.
@@ -339,7 +340,7 @@ export default function DashboardPage() {
                 border: '1px solid var(--border)',
               }}>
                 <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>Progress budget</p>
-                <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', marginBottom: 6 }}>
+                <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: 0, lineHeight: 1.15, marginBottom: 6 }}>
                   {Math.round((totalSpent / monthlyLimit) * 100)}%
                 </p>
                 <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>
@@ -355,7 +356,7 @@ export default function DashboardPage() {
                   <p style={{
                     fontWeight: 700,
                     fontSize: 18,
-                    letterSpacing: '-0.03em',
+                    letterSpacing: 0,
                     lineHeight: 1.3,
                   }}>
                     {item.value}
@@ -390,7 +391,8 @@ export default function DashboardPage() {
                   fontSize: '1.25rem',
                   fontWeight: 700,
                   fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
-                  letterSpacing: '-0.03em',
+                  letterSpacing: 0,
+                  lineHeight: 1.25,
                   marginBottom: 4,
                 }}>
                   {activeTab === 'transactions' ? 'Riwayat pengeluaran bulan ini' : 'Pola belanja per kategori'}
@@ -468,7 +470,7 @@ export default function DashboardPage() {
           <section className="surface-card" style={{ padding: 20, display: 'none' }}>
             <div style={{ marginBottom: 16 }}>
               <p className="section-label" style={{ marginBottom: 10 }}>Quick view</p>
-              <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em' }}>Snapshot pengeluaran</h3>
+              <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: 0, lineHeight: 1.3 }}>Snapshot pengeluaran</h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

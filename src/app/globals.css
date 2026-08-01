@@ -664,7 +664,7 @@ select {
   border-radius: 999px;
   background: rgba(20, 184, 166, 0.1);
   border: 1px solid rgba(94, 234, 212, 0.18);
-  color: #9fffd1;
+  color: #047857;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
@@ -672,13 +672,14 @@ select {
 }
 
 .landing-title {
-  font-size: clamp(3.05rem, 6.1vw, 5.65rem);
-  line-height: 0.98;
+  font-size: clamp(2.75rem, 5.5vw, 5rem);
+  line-height: 1.08;
   letter-spacing: 0;
   font-weight: 800;
   margin-bottom: 18px;
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   max-width: 760px;
+  text-wrap: balance;
 }
 
 .landing-lead {
@@ -975,7 +976,7 @@ select {
   margin-top: 10px;
   max-width: 420px;
   font-size: clamp(1.55rem, 3vw, 2.2rem);
-  line-height: 1.15;
+  line-height: 1.24;
   letter-spacing: 0;
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
@@ -1154,7 +1155,7 @@ select {
   max-width: 500px;
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   font-size: clamp(2.3rem, 4.4vw, 4.55rem);
-  line-height: 1.02;
+  line-height: 1.12;
   letter-spacing: 0;
   font-weight: 800;
   margin-bottom: 18px;
@@ -1498,7 +1499,7 @@ select {
   }
 
   .landing-title {
-    font-size: clamp(2.55rem, 8vw, 4rem);
+    font-size: clamp(2.35rem, 7.4vw, 3.65rem);
   }
 
   .demo-step-grid {
@@ -1628,7 +1629,8 @@ select {
   }
 
   .landing-title {
-    font-size: clamp(2.25rem, 12vw, 3.2rem);
+    font-size: clamp(2rem, 10vw, 2.85rem);
+    line-height: 1.12;
   }
 
   .landing-lead {
