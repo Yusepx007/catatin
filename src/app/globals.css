@@ -423,6 +423,39 @@ select {
   justify-content: flex-end;
 }
 
+.dashboard-period-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-period-toolbar > div:first-child {
+  min-width: 0;
+}
+
+.dashboard-period-toolbar > div:first-child span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.dashboard-period-toolbar > div:first-child strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
@@ -434,6 +467,41 @@ select {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px;
+}
+
+.month-control-panel {
+  min-width: min(100%, 520px);
+  display: grid;
+  grid-template-columns: 150px minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.month-control-panel label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.month-control-panel .input-field {
+  min-height: 42px;
+  padding: 9px 11px;
+  font-size: 13px;
+}
+
+.month-control-panel .btn-secondary {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.month-control-panel .btn-secondary:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .budget-usage-row {
@@ -1521,6 +1589,16 @@ select {
     padding: 16px 0 28px;
   }
 
+  .dashboard-period-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .month-control-panel {
+    width: 100%;
+    grid-template-columns: 1fr 1fr auto;
+  }
+
   .dashboard-nav-inner {
     width: min(100% - 24px, 1180px);
     min-height: 0;
@@ -1764,6 +1842,19 @@ select {
   .dashboard-main {
     width: min(100% - 18px, 1180px);
     padding: 12px 0 24px;
+  }
+
+  .dashboard-period-toolbar {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .month-control-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .month-control-panel .btn-secondary {
+    width: 100%;
   }
 
   .dashboard-nav-inner {

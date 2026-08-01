@@ -67,10 +67,44 @@ function IconLogout() {
   );
 }
 
+function IconDownload() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M7 1.5v7M4.2 5.8 7 8.6l2.8-2.8M2 11.5h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function getCurrentMonth(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+  }).format(new Date());
+}
+
+function getMonthLabel(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  if (!year || !monthNumber) return 'Bulan dipilih';
+  return new Date(year, monthNumber - 1, 1).toLocaleDateString('id-ID', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function escapeExcelCell(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // Main Component
 
 export default function DashboardPage() {
   const router = useRouter();
+  const todayMonth = getCurrentMonth();
   const [userId, setUserId] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
@@ -78,13 +112,18 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(todayMonth);
   const [activeMenu, setActiveMenu] = useState<'overview' | 'record' | 'history' | 'budget'>('overview');
   const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
   const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const daysPassed = now.getDate();
+  const [selectedYear, selectedMonthNumber] = selectedMonth.split('-').map(Number);
+  const daysInMonth = selectedYear && selectedMonthNumber
+    ? new Date(selectedYear, selectedMonthNumber, 0).getDate()
+    : new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysPassed = selectedMonth === todayMonth ? now.getDate() : daysInMonth;
+  const selectedMonthLabel = getMonthLabel(selectedMonth);
+  const isCurrentMonth = selectedMonth === todayMonth;
 
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -93,7 +132,7 @@ export default function DashboardPage() {
   );
 
   const monthlyTransactions = transactions.filter(
-    (t) => t.transaction_date.startsWith(currentMonth)
+    (t) => t.transaction_date.startsWith(selectedMonth)
   );
   const totalSpent = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
   const monthlyLimit = budget?.monthly_limit ?? 1_000_000;
@@ -106,7 +145,7 @@ export default function DashboardPage() {
         .eq('user_id', uid)
         .order('transaction_date', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(100),
+        .limit(1000),
       supabase
         .from('budgets')
         .select('*')
@@ -115,7 +154,7 @@ export default function DashboardPage() {
         .single(),
     ]);
     if (txRes.data) setTransactions(txRes.data);
-    if (budgetRes.data) setBudget(budgetRes.data);
+    setBudget(budgetRes.data ?? null);
   };
 
   useEffect(() => {
@@ -138,7 +177,7 @@ export default function DashboardPage() {
           (session.user.email ? session.user.email.split('@')[0] : '')
         );
         await Promise.allSettled([
-          fetchData(session.user.id, currentMonth),
+          fetchData(session.user.id, selectedMonth),
           fetch('/api/admin/me', {
             headers: { Authorization: `Bearer ${session.access_token}` },
           })
@@ -153,7 +192,7 @@ export default function DashboardPage() {
       }
     };
     init();
-  }, [router, currentMonth]);
+  }, [router, selectedMonth]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -161,7 +200,53 @@ export default function DashboardPage() {
   };
 
   const handleRefresh = () => {
-    if (userId) fetchData(userId, currentMonth);
+    if (userId) fetchData(userId, selectedMonth);
+  };
+
+  const exportMonthlyTransactions = () => {
+    if (!monthlyTransactions.length) return;
+
+    const headers = ['Tanggal', 'Kategori', 'Keterangan', 'Nominal', 'Input Awal', 'Dibuat'];
+    const rows = monthlyTransactions.map((transaction) => [
+      new Date(transaction.transaction_date + 'T00:00:00').toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }),
+      transaction.category,
+      transaction.description,
+      `Rp ${transaction.amount.toLocaleString('id-ID')}`,
+      transaction.raw_text,
+      new Date(transaction.created_at).toLocaleString('id-ID'),
+    ]);
+
+    const html = `
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+        </head>
+        <body>
+          <table border="1">
+            <caption>Catatin - ${escapeExcelCell(selectedMonthLabel)}</caption>
+            <thead>
+              <tr>${headers.map((header) => `<th>${escapeExcelCell(header)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeExcelCell(String(cell ?? ''))}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `catatin-${selectedMonth}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
   // Quick stats
   const maxTransaction = monthlyTransactions.length > 0
@@ -304,6 +389,33 @@ export default function DashboardPage() {
       </header>
 
       <div className="dashboard-main">
+        <div className="dashboard-period-toolbar">
+          <div>
+            <span>Periode laporan</span>
+            <strong>{selectedMonthLabel}</strong>
+          </div>
+          <div className="month-control-panel">
+            <label htmlFor="month-filter">Bulan yang dilihat</label>
+            <input
+              id="month-filter"
+              type="month"
+              value={selectedMonth}
+              max={todayMonth}
+              onChange={(event) => setSelectedMonth(event.target.value || todayMonth)}
+              className="input-field"
+            />
+            <button
+              type="button"
+              onClick={exportMonthlyTransactions}
+              disabled={!monthlyTransactions.length}
+              className="btn-secondary"
+            >
+              <IconDownload />
+              Export Excel
+            </button>
+          </div>
+        </div>
+
         <div className="dashboard-left">
           <section className="surface-card" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{
@@ -315,7 +427,9 @@ export default function DashboardPage() {
               marginBottom: 20,
             }}>
               <div>
-                <p className="section-label" style={{ marginBottom: 12 }}>Ringkasan bulan ini</p>
+                <p className="section-label" style={{ marginBottom: 12 }}>
+                  {isCurrentMonth ? 'Ringkasan bulan ini' : `Ringkasan ${selectedMonthLabel}`}
+                </p>
                 <h1 style={{
                   fontSize: 'clamp(1.8rem, 3vw, 2.35rem)',
                   fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
@@ -324,7 +438,7 @@ export default function DashboardPage() {
                   lineHeight: 1.18,
                   marginBottom: 8,
                 }}>
-                  Kelola pengeluaran dengan tampilan yang lebih fokus.
+                  Kelola pengeluaran {isCurrentMonth ? 'bulan ini' : selectedMonthLabel} dengan tampilan yang lebih fokus.
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: 620, lineHeight: 1.7 }}>
                   Tulis transaksi seperti biasa, lalu pantau ritme belanja, batas budget,
@@ -395,12 +509,12 @@ export default function DashboardPage() {
                   lineHeight: 1.25,
                   marginBottom: 4,
                 }}>
-                  {activeTab === 'transactions' ? 'Riwayat pengeluaran bulan ini' : 'Pola belanja per kategori'}
+                  {activeTab === 'transactions' ? `Riwayat pengeluaran ${selectedMonthLabel}` : 'Pola belanja per kategori'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                   {activeTab === 'transactions'
                     ? 'Lihat, rapikan, edit, atau hapus catatan yang sudah tersimpan.'
-                    : now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    : selectedMonthLabel}
                 </p>
               </div>
 
@@ -443,7 +557,11 @@ export default function DashboardPage() {
             </div>
 
             {activeTab === 'transactions' ? (
-              <TransactionList transactions={monthlyTransactions} onDeleted={handleRefresh} />
+              <TransactionList
+                transactions={monthlyTransactions}
+                onDeleted={handleRefresh}
+                monthLabel={selectedMonthLabel}
+              />
             ) : (
               <CategoryChart transactions={monthlyTransactions} />
             )}
@@ -457,12 +575,14 @@ export default function DashboardPage() {
 
           <div style={{ display: activeMenu === 'budget' ? 'block' : 'none' }}>
             <BudgetCard
+              key={selectedMonth}
               totalSpent={totalSpent}
               monthlyLimit={monthlyLimit}
               daysInMonth={daysInMonth}
               daysPassed={daysPassed}
               userId={userId}
-              currentMonth={currentMonth}
+              currentMonth={selectedMonth}
+              monthLabel={selectedMonthLabel}
               onBudgetUpdated={handleRefresh}
             />
           </div>

@@ -7,6 +7,7 @@ import { useState } from 'react';
 type Props = {
   transactions: Transaction[];
   onDeleted: () => void;
+  monthLabel: string;
 };
 
 type DraftTransaction = {
@@ -56,7 +57,7 @@ function EditIcon() {
   );
 }
 
-export default function TransactionList({ transactions, onDeleted }: Props) {
+export default function TransactionList({ transactions, onDeleted, monthLabel }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -148,8 +149,10 @@ export default function TransactionList({ transactions, onDeleted }: Props) {
             <path d="M7 8h6M7 11h4" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>Belum ada transaksi bulan ini</p>
-        <p style={{ fontSize: 12 }}>Mulai catat pengeluaran lewat panel chat di atas</p>
+        <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>
+          Belum ada transaksi di {monthLabel}
+        </p>
+        <p style={{ fontSize: 12 }}>Pilih bulan lain atau mulai catat pengeluaran baru lewat menu Catat</p>
       </div>
     );
   }

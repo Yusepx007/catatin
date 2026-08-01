@@ -10,6 +10,7 @@ type Props = {
   daysPassed: number;
   userId: string;
   currentMonth: string;
+  monthLabel: string;
   onBudgetUpdated: () => void;
 };
 
@@ -37,6 +38,7 @@ export default function BudgetCard({
   daysPassed,
   userId,
   currentMonth,
+  monthLabel,
   onBudgetUpdated,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
@@ -93,7 +95,7 @@ export default function BudgetCard({
   const stats = [
     { label: 'Rata-rata / hari', value: `Rp ${Math.round(dailyAverage).toLocaleString('id-ID')}` },
     { label: 'Sisa hari', value: `${daysRemaining} hari` },
-    { label: 'Proyeksi bulan ini', value: `Rp ${Math.round(projected).toLocaleString('id-ID')}`, danger: projectedOverBudget },
+    { label: `Proyeksi ${monthLabel}`, value: `Rp ${Math.round(projected).toLocaleString('id-ID')}`, danger: projectedOverBudget },
   ];
 
   return (
@@ -109,9 +111,9 @@ export default function BudgetCard({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
           <p className="section-label" style={{ marginBottom: 10 }}>Budget control</p>
-          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 4, letterSpacing: 0, lineHeight: 1.3 }}>Budget Bulan Ini</h3>
+          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 4, letterSpacing: 0, lineHeight: 1.3 }}>Budget {monthLabel}</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-            {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+            Limit khusus untuk periode yang sedang dipilih
           </p>
         </div>
         <button
