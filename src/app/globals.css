@@ -133,6 +133,7 @@ body {
   background: var(--page-bg);
   color: var(--text-primary);
   min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
   transition: background 0.3s ease, color 0.3s ease;

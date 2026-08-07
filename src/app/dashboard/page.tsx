@@ -219,6 +219,7 @@ export default function DashboardPage() {
     setBudget(budgetRes.data ?? null);
   }, []);
 
+  // Initial auth + user profile load
   useEffect(() => {
     const init = async () => {
       try {
@@ -243,7 +244,14 @@ export default function DashboardPage() {
       }
     };
     init();
-  }, [router, selectedMonth, fetchData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-fetch data when selected month changes (after initial load)
+  useEffect(() => {
+    if (!userId || loading) return;
+    fetchData(userId, selectedMonth);
+  }, [selectedMonth, userId, fetchData, loading]);
 
   const handleRefresh = () => { if (userId) fetchData(userId, selectedMonth); };
   const handleSignOut = async () => { await supabase.auth.signOut(); router.push('/'); };
