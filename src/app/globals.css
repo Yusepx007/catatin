@@ -569,6 +569,40 @@ select {
   grid-template-columns: minmax(0, 1fr) 150px;
 }
 
+/* ── Professional Landing Page ── */
+.landing-hero-grid-pro {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+}
+
+.steps-grid-pro {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.capabilities-grid-pro {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+}
+
+@media (max-width: 900px) {
+  .landing-hero-grid-pro {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .steps-grid-pro {
+    grid-template-columns: 1fr;
+  }
+  .steps-grid-pro > div {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(134,239,172,0.07);
+  }
+  .capabilities-grid-pro {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .capabilities-grid-pro > div:first-child {
+    position: static !important;
+  }
+}
+
 .site-nav {
   position: fixed;
   top: 0;
