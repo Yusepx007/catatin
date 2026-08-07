@@ -614,9 +614,35 @@ export default function HomePage() {
               <Image src="/logo.png" alt="Catatin" width={24} height={24}
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
-            <span style={{ fontSize: 13, color: 'rgba(187,247,208,0.4)', fontWeight: 500 }}>
-              Catatin — IndonesiaNEXT × Telkomsel
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, color: 'rgba(187,247,208,0.4)', fontWeight: 500 }}>
+                Catatin — Dibuat oleh Yusep
+              </span>
+              <a
+                href="https://instagram.com/yusepx007"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: 12,
+                  color: 'rgba(187,247,208,0.35)',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#86efac')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(187,247,208,0.35)')}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.8"/>
+                  <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.8"/>
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+                </svg>
+                @yusepx007
+              </a>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 24 }}>
             {['Masuk', 'Daftar'].map((label) => (
