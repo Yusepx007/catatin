@@ -98,6 +98,8 @@ export default function ChatInput({ onTransactionSaved }: Props) {
   };
 
   const handleModeSwitch = (newMode: TransactionMode) => {
+    // Only fire if actually switching to a different mode
+    if (newMode === mode) return;
     setMode(newMode);
     setInput('');
     const greetings: Record<TransactionMode, string> = {
