@@ -1,13 +1,24 @@
 'use client';
 
-import { CATEGORY_CLASSES, CATEGORY_COLORS, isExpenseCategory } from '@/lib/categories';
+import {
+  CATEGORY_CLASSES,
+  CATEGORY_COLORS,
+  INCOME_COLORS,
+  isExpenseCategory,
+  isIncomeCategory,
+  guessIncomeCategory,
+  INCOME_CATEGORIES,
+} from '@/lib/categories';
 import { useState, useRef, useEffect, useCallback } from 'react';
+
+type TransactionMode = 'expense' | 'income';
 
 type Message = {
   id: string;
   type: 'user' | 'ai' | 'confirm' | 'success' | 'error';
   content: string;
   rawText?: string;
+  mode?: TransactionMode;
   parsedData?: {
     category: string;
     amount: number;
@@ -22,8 +33,14 @@ type Props = {
 
 type RateLimit = { seconds: number } | null;
 
+function getCategoryColor(category: string): string {
+  if (isExpenseCategory(category)) return CATEGORY_COLORS[category];
+  if (isIncomeCategory(category)) return INCOME_COLORS[category];
+  return '#94a3b8';
+}
+
 function CategoryDot({ category }: { category: string }) {
-  const color = isExpenseCategory(category) ? CATEGORY_COLORS[category] : '#94a3b8';
+  const color = getCategoryColor(category);
   return (
     <div style={{
       width: 8,
@@ -36,6 +53,7 @@ function CategoryDot({ category }: { category: string }) {
 }
 
 export default function ChatInput({ onTransactionSaved }: Props) {
+  const [mode, setMode] = useState<TransactionMode>('expense');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -79,15 +97,61 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     setMessages((prev) => [...prev, { ...msg, id }]);
   };
 
+  const handleModeSwitch = (newMode: TransactionMode) => {
+    setMode(newMode);
+    setInput('');
+    const greetings: Record<TransactionMode, string> = {
+      expense: 'Mode pengeluaran aktif. Contoh: "beli kopi 25rb tadi pagi" atau "naik grab 18000 kemarin".',
+      income: 'Mode pemasukan aktif. Contoh: "terima gaji 5jt hari ini" atau "freelance desain logo 800rb".',
+    };
+    addMessage({ type: 'ai', content: greetings[newMode], mode: newMode });
+  };
+
+  const parseIncomeLocally = (text: string): Message['parsedData'] => {
+    const lower = text.toLowerCase();
+    // Amount extraction
+    const amounts = [
+      { regex: /(\d+(?:[.,]\d+)?)\s*juta/i, mult: 1_000_000 },
+      { regex: /(\d+(?:[.,]\d+)?)\s*(?:jt|j\b)/i, mult: 1_000_000 },
+      { regex: /(\d+(?:[.,]\d+)?)\s*ribu/i, mult: 1_000 },
+      { regex: /(\d+(?:[.,]\d+)?)\s*(?:rb|k\b)/i, mult: 1_000 },
+      { regex: /rp\.?\s*(\d[\d.,]*)/i, mult: 1 },
+      { regex: /(\d[\d.,]{2,})/i, mult: 1 },
+    ];
+    let amount = 0;
+    for (const { regex, mult } of amounts) {
+      const m = lower.match(regex);
+      if (m) {
+        amount = parseFloat(m[1].replace(/\./g, '').replace(',', '.')) * mult;
+        break;
+      }
+    }
+
+    // Date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    let transaction_date = todayStr;
+    if (lower.includes('kemarin')) {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      transaction_date = y.toISOString().split('T')[0];
+    }
+
+    const category = guessIncomeCategory(text);
+    const description = text.trim().slice(0, 120);
+
+    return { category, amount: Math.round(amount) || 100000, transaction_date, description };
+  };
+
   const addFallbackParsedMessage = async (rawText: string) => {
-    const { parseTransactionWithRules } = await import('@/lib/catatin-ai');
-    const parsedData = parseTransactionWithRules(rawText);
-    addMessage({
-      type: 'confirm',
-      content: 'Transaksi berhasil dibaca. Apakah datanya sudah benar?',
-      rawText,
-      parsedData,
-    });
+    if (mode === 'income') {
+      const parsedData = parseIncomeLocally(rawText);
+      addMessage({ type: 'confirm', content: 'Pemasukan berhasil dibaca. Apakah datanya sudah benar?', rawText, mode, parsedData });
+    } else {
+      const { parseTransactionWithRules } = await import('@/lib/catatin-ai');
+      const parsedData = parseTransactionWithRules(rawText);
+      addMessage({ type: 'confirm', content: 'Transaksi berhasil dibaca. Apakah datanya sudah benar?', rawText, mode, parsedData });
+    }
   };
 
   const handleSend = async () => {
@@ -97,16 +161,33 @@ export default function ChatInput({ onTransactionSaved }: Props) {
       addMessage({ type: 'error', content: 'Deskripsi terlalu singkat. Coba lebih detail.' });
       return;
     }
-
-    // Check rate limit
     if (rateLimit && countdown > 0) {
       addMessage({ type: 'error', content: `Tunggu ${countdown} detik sebelum mencoba lagi.` });
       return;
     }
 
     setInput('');
-    addMessage({ type: 'user', content: text });
+    addMessage({ type: 'user', content: text, mode });
     setIsLoading(true);
+
+    // For income, use local parsing since the API is expense-only
+    if (mode === 'income') {
+      try {
+        const parsedData = parseIncomeLocally(text);
+        addMessage({
+          type: 'confirm',
+          content: 'Pemasukan berhasil dibaca. Apakah datanya sudah benar?',
+          rawText: text,
+          mode,
+          parsedData,
+        });
+      } catch {
+        addMessage({ type: 'error', content: 'Gagal membaca pemasukan. Coba tulis lebih spesifik.' });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     try {
       const { supabase } = await import('@/lib/supabase');
@@ -125,7 +206,6 @@ export default function ChatInput({ onTransactionSaved }: Props) {
       const data = await res.json().catch(() => ({}));
 
       if (res.status === 429) {
-        // Extract seconds from error message e.g. "Tunggu sekitar 53 detik"
         const match = (data.error as string).match(/(\d+) detik/);
         const secs = match ? parseInt(match[1]) : 60;
         setRateLimit({ seconds: secs });
@@ -140,6 +220,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         type: 'confirm',
         content: 'Transaksi berhasil diparse. Apakah datanya sudah benar?',
         rawText: text,
+        mode,
         parsedData: data.data,
       });
     } catch (err: unknown) {
@@ -179,6 +260,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     if (!message.parsedData || savedConfirmRef.current.has(message.id)) return;
     markConfirmSaved(message.id, true);
     setIsLoading(true);
+    const txMode = message.mode ?? 'expense';
     try {
       const { supabase } = await import('@/lib/supabase');
       const { data: { user } } = await supabase.auth.getUser();
@@ -191,13 +273,15 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         amount: message.parsedData.amount,
         transaction_date: message.parsedData.transaction_date,
         description: message.parsedData.description,
+        type: txMode,
       });
 
       if (error) throw error;
 
+      const label = txMode === 'income' ? 'Pemasukan' : 'Transaksi';
       addMessage({
         type: 'success',
-        content: `Transaksi disimpan - ${message.parsedData.description} (Rp ${message.parsedData.amount.toLocaleString('id-ID')})`,
+        content: `${label} disimpan - ${message.parsedData.description} (Rp ${message.parsedData.amount.toLocaleString('id-ID')})`,
       });
       onTransactionSaved();
     } catch (err: unknown) {
@@ -213,11 +297,15 @@ export default function ChatInput({ onTransactionSaved }: Props) {
     addMessage({ type: 'ai', content: 'Coba ketik ulang dengan deskripsi yang lebih lengkap.' });
   };
 
-  const examples = [
-    'beli mie ayam 15rb tadi siang',
-    'naik grab 18000 kemarin',
-    'bayar kost 500rb',
-  ];
+  const expenseExamples = ['beli mie ayam 15rb siang ini', 'naik grab 18000 kemarin', 'bayar kost 500rb'];
+  const incomeExamples = ['terima gaji 5jt hari ini', 'freelance desain logo 800rb', 'bonus kerja 1jt'];
+  const examples = mode === 'income' ? incomeExamples : expenseExamples;
+
+  const isExpenseMode = mode === 'expense';
+  const accentColor = isExpenseMode ? 'var(--accent-green)' : '#818cf8';
+  const accentGradient = isExpenseMode
+    ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.92), rgba(45, 212, 191, 0.84))'
+    : 'linear-gradient(135deg, rgba(129, 140, 248, 0.92), rgba(99, 102, 241, 0.84))';
 
   return (
     <div style={{
@@ -230,9 +318,76 @@ export default function ChatInput({ onTransactionSaved }: Props) {
       boxShadow: 'var(--shadow-md)',
       overflow: 'hidden',
     }}>
+      {/* Mode Tabs */}
+      <div style={{
+        display: 'flex',
+        padding: '12px 14px 0',
+        gap: 6,
+        background: 'rgba(248, 250, 252, 0.9)',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255,255,255,0.7)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: 4,
+          gap: 4,
+          flex: 1,
+        }}>
+          {(['expense', 'income'] as const).map((m) => (
+            <button
+              key={m}
+              id={`mode-tab-${m}`}
+              type="button"
+              onClick={() => handleModeSwitch(m)}
+              style={{
+                flex: 1,
+                padding: '9px 14px',
+                borderRadius: 10,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
+                background: mode === m
+                  ? (m === 'expense' ? 'rgba(34,197,94,0.12)' : 'rgba(129,140,248,0.12)')
+                  : 'transparent',
+                color: mode === m
+                  ? (m === 'expense' ? 'var(--accent-green-light)' : '#6366f1')
+                  : 'var(--text-muted)',
+                boxShadow: mode === m ? '0 6px 18px rgba(15,23,42,0.08)' : 'none',
+              }}
+              aria-pressed={mode === m}
+            >
+              {m === 'expense' ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M6.5 1v11M1 6.5l5.5 5.5L12 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Pengeluaran
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                    <path d="M6.5 12V1M1 6.5l5.5-5.5L12 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Pemasukan
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{
-        padding: '18px 22px',
+        padding: '14px 20px',
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
@@ -240,30 +395,33 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         background: 'rgba(248, 250, 252, 0.9)',
       }}>
         <div style={{
-          width: 40,
-          height: 40,
-          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.92), rgba(45, 212, 191, 0.84))',
-          borderRadius: 14,
+          width: 38,
+          height: 38,
+          background: accentGradient,
+          borderRadius: 12,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          boxShadow: '0 14px 30px rgba(34, 197, 94, 0.22)',
+          boxShadow: `0 10px 26px ${isExpenseMode ? 'rgba(34, 197, 94, 0.22)' : 'rgba(99, 102, 241, 0.22)'}`,
+          transition: 'all 0.3s ease',
         }}>
-          {/* Chat icon SVG */}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
             <path d="M2 2h12v9H9l-3 3v-3H2V2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
           </svg>
         </div>
         <div>
-          <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>Catat Pengeluaran</p>
+          <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 1 }}>
+            {isExpenseMode ? 'Catat Pengeluaran' : 'Catat Pemasukan'}
+          </p>
           <p style={{
-            color: countdown > 0 ? '#fbbf24' : isLoading ? 'var(--accent-green)' : 'var(--text-muted)',
+            color: countdown > 0 ? '#fbbf24' : isLoading ? accentColor : 'var(--text-muted)',
             fontSize: 12,
+            transition: 'color 0.2s',
           }}>
             {countdown > 0
               ? `Tunggu ${countdown} detik sebelum kirim lagi`
-              : isLoading ? 'Catatin sedang membaca transaksi...'
+              : isLoading ? 'Catatin sedang membaca...'
               : 'Ketik bebas, Catatin yang rapikan'}
           </p>
         </div>
@@ -273,10 +431,10 @@ export default function ChatInput({ onTransactionSaved }: Props) {
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '20px',
+        padding: '16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: 10,
         background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.96))',
       }}>
         {messages.map((msg) => (
@@ -287,7 +445,17 @@ export default function ChatInput({ onTransactionSaved }: Props) {
             animation: 'fadeInUp 0.25s ease forwards',
           }}>
             {msg.type === 'user' && (
-              <div className="chat-bubble-user">{msg.content}</div>
+              <div className="chat-bubble-user" style={{
+                background: msg.mode === 'income'
+                  ? 'rgba(129, 140, 248, 0.14)'
+                  : undefined,
+                borderColor: msg.mode === 'income'
+                  ? 'rgba(129, 140, 248, 0.2)'
+                  : undefined,
+                color: msg.mode === 'income' ? '#4338ca' : undefined,
+              }}>
+                {msg.content}
+              </div>
             )}
 
             {(msg.type === 'ai' || msg.type === 'success' || msg.type === 'error') && (
@@ -312,17 +480,39 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                   {/* Result card */}
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.92)',
-                    border: '1px solid var(--border-light)',
+                    border: `1px solid ${msg.mode === 'income' ? 'rgba(129,140,248,0.25)' : 'var(--border-light)'}`,
                     borderRadius: 16,
                     padding: 16,
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <span className={`category-badge ${isExpenseCategory(msg.parsedData.category) ? CATEGORY_CLASSES[msg.parsedData.category] : 'cat-other'}`}>
-                        <CategoryDot category={msg.parsedData.category} />
-                        {msg.parsedData.category}
-                      </span>
-                      <span style={{ fontWeight: 800, fontSize: 17, color: 'var(--accent-green-light)' }}>
-                        Rp {msg.parsedData.amount.toLocaleString('id-ID')}
+                      {msg.mode === 'income' ? (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background: 'rgba(129,140,248,0.1)',
+                          color: '#6366f1',
+                          border: '1px solid rgba(129,140,248,0.2)',
+                        }}>
+                          <CategoryDot category={msg.parsedData.category} />
+                          {msg.parsedData.category}
+                        </span>
+                      ) : (
+                        <span className={`category-badge ${isExpenseCategory(msg.parsedData.category) ? CATEGORY_CLASSES[msg.parsedData.category] : 'cat-other'}`}>
+                          <CategoryDot category={msg.parsedData.category} />
+                          {msg.parsedData.category}
+                        </span>
+                      )}
+                      <span style={{
+                        fontWeight: 800,
+                        fontSize: 17,
+                        color: msg.mode === 'income' ? '#6366f1' : 'var(--accent-green-light)',
+                      }}>
+                        {msg.mode === 'income' ? '+' : ''}Rp {msg.parsedData.amount.toLocaleString('id-ID')}
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
@@ -339,6 +529,22 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                         </p>
                       </div>
                     </div>
+                    {/* Editable category for income */}
+                    {msg.mode === 'income' && (
+                      <div style={{ marginTop: 12 }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4, letterSpacing: '0.05em' }}>KATEGORI PEMASUKAN</p>
+                        <select
+                          className="input-field"
+                          defaultValue={msg.parsedData.category}
+                          onChange={(e) => { msg.parsedData!.category = e.target.value; }}
+                          style={{ padding: '8px 10px', fontSize: 12 }}
+                        >
+                          {INCOME_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -346,8 +552,27 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                     id="confirm-transaction-btn"
                     onClick={() => handleConfirm(msg)}
                     disabled={isLoading || savedConfirmIds.has(msg.id)}
-                    className="btn-primary"
-                    style={{ flex: 1, justifyContent: 'center', padding: '10px 14px', fontSize: 13 }}
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      padding: '10px 14px',
+                      fontSize: 13,
+                      background: savedConfirmIds.has(msg.id)
+                        ? 'rgba(100,116,139,0.1)'
+                        : msg.mode === 'income'
+                        ? 'linear-gradient(135deg, #6366f1, #818cf8)'
+                        : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 12,
+                      cursor: savedConfirmIds.has(msg.id) ? 'default' : 'pointer',
+                      fontWeight: 600,
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      transition: 'all 0.2s',
+                    }}
                   >
                     {savedConfirmIds.has(msg.id) ? 'Tersimpan' : 'Simpan'}
                   </button>
@@ -374,7 +599,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  background: 'var(--accent-green)',
+                  background: isExpenseMode ? 'var(--accent-green)' : '#818cf8',
                   opacity: 0.7,
                   animation: `pulse-glow 1.2s ease ${i * 0.2}s infinite`,
                 }} />
@@ -387,10 +612,10 @@ export default function ChatInput({ onTransactionSaved }: Props) {
 
       {/* Quick examples */}
       <div style={{
-        padding: '12px 14px',
+        padding: '10px 14px',
         borderTop: '1px solid var(--border)',
         display: 'flex',
-        gap: 8,
+        gap: 6,
         flexWrap: 'wrap',
         background: 'rgba(248, 250, 252, 0.86)',
       }}>
@@ -402,7 +627,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
               background: 'rgba(148, 163, 184, 0.05)',
               border: '1px solid var(--border)',
               borderRadius: 20,
-              padding: '6px 12px',
+              padding: '5px 10px',
               color: 'var(--text-soft)',
               fontSize: 11,
               cursor: 'pointer',
@@ -410,8 +635,9 @@ export default function ChatInput({ onTransactionSaved }: Props) {
               fontFamily: 'inherit',
             }}
             onMouseEnter={(e) => {
+              const accent = isExpenseMode ? 'rgba(134, 239, 172, 0.22)' : 'rgba(129, 140, 248, 0.22)';
               (e.currentTarget).style.color = 'var(--text-secondary)';
-              (e.currentTarget).style.borderColor = 'rgba(134, 239, 172, 0.22)';
+              (e.currentTarget).style.borderColor = accent;
             }}
             onMouseLeave={(e) => {
               (e.currentTarget).style.color = 'var(--text-soft)';
@@ -423,7 +649,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
         ))}
       </div>
 
-      {/* Rate limit countdown bar */}
+      {/* Rate limit bar */}
       {countdown > 0 && rateLimit && (
         <div style={{
           padding: '8px 14px',
@@ -434,12 +660,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
             <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 500 }}>
               Batas request tercapai. Tunggu sebelum kirim lagi.
             </span>
-            <span style={{
-              color: '#fbbf24',
-              fontSize: 13,
-              fontWeight: 700,
-              fontVariantNumeric: 'tabular-nums',
-            }}>
+            <span style={{ color: '#fbbf24', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
               {countdown}s
             </span>
           </div>
@@ -457,7 +678,7 @@ export default function ChatInput({ onTransactionSaved }: Props) {
 
       {/* Input */}
       <div style={{
-        padding: '14px',
+        padding: '12px 14px',
         display: 'flex',
         gap: 10,
         background: 'rgba(248, 250, 252, 0.9)',
@@ -469,7 +690,13 @@ export default function ChatInput({ onTransactionSaved }: Props) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          placeholder={countdown > 0 ? `Tunggu ${countdown} detik...` : 'Contoh: beli nasi goreng 20rb tadi malam'}
+          placeholder={
+            countdown > 0
+              ? `Tunggu ${countdown} detik...`
+              : isExpenseMode
+              ? 'Contoh: beli nasi goreng 20rb tadi malam'
+              : 'Contoh: terima gaji 5jt hari ini'
+          }
           disabled={isLoading || countdown > 0}
           maxLength={500}
           className="input-field"
@@ -478,17 +705,29 @@ export default function ChatInput({ onTransactionSaved }: Props) {
             fontSize: 14,
             opacity: countdown > 0 ? 0.5 : 1,
             cursor: countdown > 0 ? 'not-allowed' : 'text',
+            borderColor: !isExpenseMode && input ? 'rgba(129,140,248,0.4)' : undefined,
           }}
         />
         <button
           id="send-chat-btn"
           onClick={handleSend}
           disabled={!input.trim() || isLoading || countdown > 0}
-          className="btn-primary"
           style={{
+            background: countdown > 0 ? 'rgba(100,116,139,0.2)' : accentGradient,
+            color: 'white',
+            border: 'none',
+            borderRadius: 12,
             padding: '12px 18px',
             flexShrink: 0,
-            opacity: countdown > 0 ? 0.4 : 1,
+            cursor: !input.trim() || isLoading || countdown > 0 ? 'not-allowed' : 'pointer',
+            opacity: (!input.trim() || countdown > 0) ? 0.5 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            boxShadow: isExpenseMode
+              ? '0 8px 20px rgba(34,197,94,0.25)'
+              : '0 8px 20px rgba(99,102,241,0.25)',
           }}
           aria-label="Kirim"
         >

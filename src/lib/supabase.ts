@@ -27,6 +27,7 @@ export type Transaction = {
   transaction_date: string;
   description: string;
   created_at: string;
+  type: 'expense' | 'income';
 };
 
 export type Budget = {

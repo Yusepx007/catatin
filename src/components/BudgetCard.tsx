@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 
 type Props = {
   totalSpent: number;
+  totalIncome: number;
   monthlyLimit: number;
   daysInMonth: number;
   daysPassed: number;
@@ -33,6 +34,7 @@ function AlertIcon() {
 
 export default function BudgetCard({
   totalSpent,
+  totalIncome,
   monthlyLimit,
   daysInMonth,
   daysPassed,
@@ -179,6 +181,39 @@ export default function BudgetCard({
           >
             {saving ? '...' : 'Simpan'}
           </button>
+        </div>
+      )}
+
+      {/* Income vs Spent net balance */}
+      {totalIncome > 0 && (
+        <div style={{
+          marginBottom: 14,
+          padding: '12px 14px',
+          borderRadius: 14,
+          background: 'rgba(240, 253, 244, 0.86)',
+          border: '1px solid rgba(134, 239, 172, 0.22)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 2 }}>PEMASUKAN BULAN INI</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 800, color: '#16a34a', lineHeight: 1.15 }}>
+              +Rp {totalIncome.toLocaleString('id-ID')}
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 2 }}>SALDO BERSIH</p>
+            <p style={{
+              fontSize: '1rem',
+              fontWeight: 800,
+              color: totalIncome - totalSpent >= 0 ? '#16a34a' : '#ef4444',
+              lineHeight: 1.15,
+            }}>
+              {totalIncome - totalSpent >= 0 ? '+' : ''}Rp {Math.abs(totalIncome - totalSpent).toLocaleString('id-ID')}
+            </p>
+          </div>
         </div>
       )}
 

@@ -15,6 +15,54 @@ export const EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
+export const INCOME_CATEGORIES = [
+  'Gaji & Upah',
+  'Freelance & Proyek',
+  'Bisnis',
+  'Investasi',
+  'Bonus & THR',
+  'Hadiah & Hibah',
+  'Penjualan',
+  'Pendapatan Lainnya',
+] as const;
+
+export type IncomeCategory = (typeof INCOME_CATEGORIES)[number];
+
+export type TransactionType = 'expense' | 'income';
+
+export const INCOME_COLORS: Record<IncomeCategory, string> = {
+  'Gaji & Upah': '#22c55e',
+  'Freelance & Proyek': '#2dd4bf',
+  'Bisnis': '#38bdf8',
+  'Investasi': '#818cf8',
+  'Bonus & THR': '#fbbf24',
+  'Hadiah & Hibah': '#fb7185',
+  'Penjualan': '#34d399',
+  'Pendapatan Lainnya': '#94a3b8',
+};
+
+export const INCOME_INITIALS: Record<IncomeCategory, string> = {
+  'Gaji & Upah': 'GJ',
+  'Freelance & Proyek': 'FL',
+  'Bisnis': 'BS',
+  'Investasi': 'IV',
+  'Bonus & THR': 'BN',
+  'Hadiah & Hibah': 'HD',
+  'Penjualan': 'JL',
+  'Pendapatan Lainnya': 'LN',
+};
+
+export const INCOME_KEYWORDS: Record<IncomeCategory, string[]> = {
+  'Gaji & Upah': ['gaji', 'upah', 'salary', 'slip gaji', 'transfer gaji', 'payroll', 'terima gaji'],
+  'Freelance & Proyek': ['freelance', 'proyek', 'project', 'client', 'klien', 'kontrak', 'jasa'],
+  'Bisnis': ['bisnis', 'usaha', 'omzet', 'penjualan toko', 'dagangan', 'lapak'],
+  'Investasi': ['investasi', 'saham', 'dividen', 'bunga deposito', 'return', 'reksadana', 'crypto'],
+  'Bonus & THR': ['bonus', 'thr', 'tunjangan', 'insentif', 'komisi', 'reward'],
+  'Hadiah & Hibah': ['hadiah', 'hibah', 'pemberian', 'kado', 'uang saku', 'kiriman'],
+  'Penjualan': ['jual', 'jualan', 'sold', 'penjualan', 'marketplace', 'shopee', 'tokopedia', 'olshop'],
+  'Pendapatan Lainnya': [],
+};
+
 export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
   'Makanan & Minuman': '#fb923c',
   Transportasi: '#60a5fa',
@@ -234,3 +282,35 @@ export function normalizeExpenseCategory(category: string): ExpenseCategory {
   return matched ?? 'Lainnya';
 }
 
+export function isIncomeCategory(category: string): category is IncomeCategory {
+  return INCOME_CATEGORIES.includes(category as IncomeCategory);
+}
+
+export function normalizeIncomeCategory(category: string): IncomeCategory {
+  const matched = INCOME_CATEGORIES.find(
+    (item) => item.toLowerCase() === category.trim().toLowerCase()
+  );
+  return matched ?? 'Pendapatan Lainnya';
+}
+
+export function getCategoryColor(category: string): string {
+  if (isExpenseCategory(category)) return CATEGORY_COLORS[category];
+  if (isIncomeCategory(category)) return INCOME_COLORS[category];
+  return '#94a3b8';
+}
+
+export function getCategoryInitials(category: string): string {
+  if (isExpenseCategory(category)) return CATEGORY_INITIALS[category];
+  if (isIncomeCategory(category)) return INCOME_INITIALS[category];
+  return 'LN';
+}
+
+export function guessIncomeCategory(text: string): IncomeCategory {
+  const lower = text.toLowerCase();
+  for (const [cat, keywords] of Object.entries(INCOME_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) {
+      return cat as IncomeCategory;
+    }
+  }
+  return 'Pendapatan Lainnya';
+}

@@ -75,6 +75,24 @@ function IconDownload() {
   );
 }
 
+function IconTrendUp() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 10l3.5-4 2.5 2L11 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 4H11v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconTrendDown() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 4l3.5 4 2.5-2L11 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 10H11V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function getCurrentMonth(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
@@ -134,7 +152,14 @@ export default function DashboardPage() {
   const monthlyTransactions = transactions.filter(
     (t) => t.transaction_date.startsWith(selectedMonth)
   );
-  const totalSpent = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  // Separate expense and income
+  const monthlyExpenses = monthlyTransactions.filter(t => (t.type ?? 'expense') === 'expense');
+  const monthlyIncome = monthlyTransactions.filter(t => t.type === 'income');
+
+  const totalSpent = monthlyExpenses.reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = monthlyIncome.reduce((sum, t) => sum + t.amount, 0);
+  const netBalance = totalIncome - totalSpent;
   const monthlyLimit = budget?.monthly_limit ?? 1_000_000;
 
   const fetchData = async (uid: string, month: string) => {
@@ -206,13 +231,14 @@ export default function DashboardPage() {
   const exportMonthlyTransactions = () => {
     if (!monthlyTransactions.length) return;
 
-    const headers = ['Tanggal', 'Kategori', 'Keterangan', 'Nominal', 'Input Awal', 'Dibuat'];
+    const headers = ['Tanggal', 'Tipe', 'Kategori', 'Keterangan', 'Nominal', 'Input Awal', 'Dibuat'];
     const rows = monthlyTransactions.map((transaction) => [
       new Date(transaction.transaction_date + 'T00:00:00').toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
       }),
+      transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
       transaction.category,
       transaction.description,
       `Rp ${transaction.amount.toLocaleString('id-ID')}`,
@@ -248,16 +274,17 @@ export default function DashboardPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
   // Quick stats
   const maxTransaction = monthlyTransactions.length > 0
     ? Math.max(...monthlyTransactions.map((t) => t.amount))
     : 0;
-  const avgPerTransaction = monthlyTransactions.length > 0
-    ? Math.round(totalSpent / monthlyTransactions.length)
+  const avgPerTransaction = monthlyExpenses.length > 0
+    ? Math.round(totalSpent / monthlyExpenses.length)
     : 0;
   const busiestDate = (() => {
-    if (!monthlyTransactions.length) return '-';
-    const byDay = monthlyTransactions.reduce((acc, t) => {
+    if (!monthlyExpenses.length) return '-';
+    const byDay = monthlyExpenses.reduce((acc, t) => {
       acc[t.transaction_date] = (acc[t.transaction_date] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
@@ -268,15 +295,17 @@ export default function DashboardPage() {
   })();
 
   const quickStats = [
-    { label: 'Total transaksi', value: `${monthlyTransactions.length} transaksi` },
-    { label: 'Transaksi terbesar', value: maxTransaction > 0 ? `Rp ${maxTransaction.toLocaleString('id-ID')}` : '-' },
-    { label: 'Rata-rata / transaksi', value: avgPerTransaction > 0 ? `Rp ${avgPerTransaction.toLocaleString('id-ID')}` : '-' },
-    { label: 'Hari pengeluaran tertinggi', value: busiestDate },
+    { label: 'Total pengeluaran', value: `${monthlyExpenses.length} transaksi`, sub: totalSpent > 0 ? `Rp ${totalSpent.toLocaleString('id-ID')}` : null, color: '#ef4444', icon: <IconTrendDown /> },
+    { label: 'Total pemasukan', value: `${monthlyIncome.length} transaksi`, sub: totalIncome > 0 ? `Rp ${totalIncome.toLocaleString('id-ID')}` : null, color: '#22c55e', icon: <IconTrendUp /> },
+    { label: 'Pengeluaran terbesar', value: maxTransaction > 0 ? `Rp ${maxTransaction.toLocaleString('id-ID')}` : '-', color: 'var(--text-primary)' },
+    { label: 'Rata-rata / pengeluaran', value: avgPerTransaction > 0 ? `Rp ${avgPerTransaction.toLocaleString('id-ID')}` : '-', color: 'var(--text-primary)' },
+    { label: 'Hari pengeluaran tertinggi', value: busiestDate, color: 'var(--text-primary)' },
   ];
-  // Top category
+
+  // Top category (expense)
   const topCategory = (() => {
-    if (!monthlyTransactions.length) return null;
-    const totals = monthlyTransactions.reduce((acc, t) => {
+    if (!monthlyExpenses.length) return null;
+    const totals = monthlyExpenses.reduce((acc, t) => {
       acc[t.category] = (acc[t.category] || 0) + t.amount;
       return acc;
     }, {} as Record<string, number>);
@@ -287,6 +316,7 @@ export default function DashboardPage() {
   const topCategoryColor = topCategory && isExpenseCategory(topCategory.name)
     ? CATEGORY_COLORS[topCategory.name]
     : '#94a3b8';
+
   // Loading screen
   if (loading) {
     return (
@@ -310,6 +340,7 @@ export default function DashboardPage() {
       </div>
     );
   }
+
   // Render
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -417,6 +448,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="dashboard-left">
+          {/* ---- OVERVIEW ---- */}
           <section className="surface-card" style={{ padding: 24, display: activeMenu === 'overview' ? 'block' : 'none' }}>
             <div style={{
               display: 'flex',
@@ -438,46 +470,97 @@ export default function DashboardPage() {
                   lineHeight: 1.18,
                   marginBottom: 8,
                 }}>
-                  Kelola pengeluaran {isCurrentMonth ? 'bulan ini' : selectedMonthLabel} dengan tampilan yang lebih fokus.
+                  Kelola keuangan {isCurrentMonth ? 'bulan ini' : selectedMonthLabel} dalam satu tempat.
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: 620, lineHeight: 1.7 }}>
-                  Tulis transaksi seperti biasa, lalu pantau ritme belanja, batas budget,
-                  dan kategori paling dominan tanpa harus berpindah-pindah tampilan.
+                  Catat pemasukan dan pengeluaran, pantau budget, dan lihat pola keuanganmu tanpa harus berpindah aplikasi.
                 </p>
               </div>
 
+              {/* Net balance card */}
               <div style={{
                 minWidth: 220,
                 padding: 18,
                 borderRadius: 20,
-                background: 'rgba(248, 250, 252, 0.9)',
-                border: '1px solid var(--border)',
+                background: netBalance >= 0
+                  ? 'rgba(240, 253, 244, 0.9)'
+                  : 'rgba(254, 242, 242, 0.9)',
+                border: netBalance >= 0
+                  ? '1px solid rgba(134, 239, 172, 0.22)'
+                  : '1px solid rgba(248, 113, 113, 0.22)',
               }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>Progress budget</p>
-                <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: 0, lineHeight: 1.15, marginBottom: 6 }}>
-                  {Math.round((totalSpent / monthlyLimit) * 100)}%
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Saldo bersih bulan ini</p>
+                <p style={{
+                  fontSize: 28,
+                  fontWeight: 800,
+                  letterSpacing: 0,
+                  lineHeight: 1.15,
+                  marginBottom: 6,
+                  color: netBalance >= 0 ? '#16a34a' : '#ef4444',
+                }}>
+                  {netBalance >= 0 ? '+' : ''}Rp {Math.abs(netBalance).toLocaleString('id-ID')}
                 </p>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>
-                  dari limit bulanan sudah terpakai.
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <p style={{ color: '#16a34a', fontSize: 12 }}>
+                    Masuk: Rp {totalIncome.toLocaleString('id-ID')}
+                  </p>
+                  <p style={{ color: '#ef4444', fontSize: 12 }}>
+                    Keluar: Rp {totalSpent.toLocaleString('id-ID')}
+                  </p>
+                </div>
               </div>
             </div>
 
+            {/* Stats grid */}
             <div className="metric-grid">
               {quickStats.map((item) => (
                 <div key={item.label} className="metric-card">
-                  <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>{item.label}</p>
-                  <p style={{
-                    fontWeight: 700,
-                    fontSize: 18,
-                    letterSpacing: 0,
-                    lineHeight: 1.3,
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    {item.icon && (
+                      <span style={{ color: item.color }}>{item.icon}</span>
+                    )}
+                    <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>{item.label}</p>
+                  </div>
+                  <p style={{ fontWeight: 700, fontSize: 16, letterSpacing: 0, lineHeight: 1.3, color: item.color || 'var(--text-primary)' }}>
                     {item.value}
                   </p>
+                  {item.sub && (
+                    <p style={{ fontWeight: 800, fontSize: 14, color: item.color, marginTop: 2 }}>
+                      {item.sub}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
+
+            {/* Budget progress inline */}
+            {monthlyExpenses.length > 0 && (
+              <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 16, background: 'rgba(248,250,252,0.9)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Progress budget pengeluaran</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: totalSpent >= monthlyLimit * 0.9 ? '#ef4444' : 'var(--accent-green-light)' }}>
+                    {Math.round((totalSpent / monthlyLimit) * 100)}%
+                  </span>
+                </div>
+                <div className="progress-bar" style={{ height: 8 }}>
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min((totalSpent / monthlyLimit) * 100, 100)}%`,
+                      background: totalSpent >= monthlyLimit * 0.9
+                        ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                        : totalSpent >= monthlyLimit * 0.7
+                        ? 'linear-gradient(90deg, #f59e0b, #d97706)'
+                        : 'linear-gradient(90deg, #10b981, #059669)',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Rp {totalSpent.toLocaleString('id-ID')}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Limit: Rp {monthlyLimit.toLocaleString('id-ID')}</span>
+                </div>
+              </div>
+            )}
           </section>
 
           <div style={{ display: activeMenu === 'overview' ? 'block' : 'none' }}>
@@ -509,7 +592,7 @@ export default function DashboardPage() {
                   lineHeight: 1.25,
                   marginBottom: 4,
                 }}>
-                  {activeTab === 'transactions' ? `Riwayat pengeluaran ${selectedMonthLabel}` : 'Pola belanja per kategori'}
+                  {activeTab === 'transactions' ? `Riwayat ${selectedMonthLabel}` : 'Pola belanja per kategori'}
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                   {activeTab === 'transactions'
@@ -517,6 +600,34 @@ export default function DashboardPage() {
                     : selectedMonthLabel}
                 </p>
               </div>
+
+              {/* Summary pills */}
+              {activeTab === 'transactions' && monthlyTransactions.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    background: 'rgba(34,197,94,0.09)',
+                    border: '1px solid rgba(134,239,172,0.2)',
+                    color: '#16a34a',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}>
+                    Masuk: +Rp {totalIncome.toLocaleString('id-ID')}
+                  </span>
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    background: 'rgba(239,68,68,0.07)',
+                    border: '1px solid rgba(248,113,113,0.2)',
+                    color: '#ef4444',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}>
+                    Keluar: -Rp {totalSpent.toLocaleString('id-ID')}
+                  </span>
+                </div>
+              )}
 
               <div style={{
                 display: 'flex',
@@ -563,7 +674,7 @@ export default function DashboardPage() {
                 monthLabel={selectedMonthLabel}
               />
             ) : (
-              <CategoryChart transactions={monthlyTransactions} />
+              <CategoryChart transactions={monthlyExpenses} />
             )}
           </section>
         </div>
@@ -577,6 +688,7 @@ export default function DashboardPage() {
             <BudgetCard
               key={selectedMonth}
               totalSpent={totalSpent}
+              totalIncome={totalIncome}
               monthlyLimit={monthlyLimit}
               daysInMonth={daysInMonth}
               daysPassed={daysPassed}
@@ -586,31 +698,6 @@ export default function DashboardPage() {
               onBudgetUpdated={handleRefresh}
             />
           </div>
-
-          <section className="surface-card" style={{ padding: 20, display: 'none' }}>
-            <div style={{ marginBottom: 16 }}>
-              <p className="section-label" style={{ marginBottom: 10 }}>Quick view</p>
-              <h3 style={{ fontWeight: 700, fontSize: 18, letterSpacing: 0, lineHeight: 1.3 }}>Snapshot pengeluaran</h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {quickStats.map((s) => (
-                <div key={s.label} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '12px 14px',
-                  background: 'rgba(248, 250, 252, 0.9)',
-                  borderRadius: 16,
-                  border: '1px solid var(--border)',
-                }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.5 }}>{s.label}</span>
-                  <span style={{ fontWeight: 700, fontSize: 13, textAlign: 'right' }}>{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </section>
 
           {topCategory && (
             <section style={{
@@ -628,7 +715,7 @@ export default function DashboardPage() {
                 marginBottom: 14,
                 textTransform: 'uppercase',
               }}>
-                Kategori terbesar
+                Kategori pengeluaran terbesar
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{
@@ -653,7 +740,7 @@ export default function DashboardPage() {
                     Rp {topCategory.amount.toLocaleString('id-ID')}
                   </p>
                   <p style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-                    Mengambil porsi {topCategory.pct}% dari total bulan ini
+                    Mengambil porsi {topCategory.pct}% dari total pengeluaran
                   </p>
                 </div>
               </div>
@@ -664,4 +751,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

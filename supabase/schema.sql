@@ -104,6 +104,47 @@ ALTER TABLE public.transactions
   ADD CONSTRAINT transactions_amount_check
     CHECK (amount > 0 AND amount <= 100000000);
 
+-- Add transaction type (expense / income) — run once
+ALTER TABLE public.transactions
+  ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'expense'
+    CHECK (type IN ('expense', 'income'));
+
+-- Drop old expense-only category constraint and allow income categories too
+ALTER TABLE public.transactions
+  DROP CONSTRAINT IF EXISTS transactions_category_check;
+
+ALTER TABLE public.transactions
+  DROP CONSTRAINT IF EXISTS transactions_category_check2;
+
+ALTER TABLE public.transactions
+  ADD CONSTRAINT transactions_category_check2
+    CHECK (
+      -- expense categories
+      category IN (
+        'Makanan & Minuman',
+        'Transportasi',
+        'Belanja',
+        'Paylater & Cicilan',
+        'Perawatan Diri',
+        'Rumah Tangga',
+        'Hiburan',
+        'Kesehatan',
+        'Pendidikan',
+        'Tagihan & Utilitas',
+        'Donasi & Sosial',
+        'Lainnya',
+        -- income categories
+        'Gaji & Upah',
+        'Freelance & Proyek',
+        'Bisnis',
+        'Investasi',
+        'Bonus & THR',
+        'Hadiah & Hibah',
+        'Penjualan',
+        'Pendapatan Lainnya'
+      )
+    );
+
 ALTER TABLE public.transactions
   DROP CONSTRAINT IF EXISTS transactions_text_length_check,
   ADD CONSTRAINT transactions_text_length_check
