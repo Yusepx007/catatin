@@ -29,6 +29,7 @@ type Message = {
 
 type Props = {
   onTransactionSaved: () => void;
+  resetKey?: number;
 };
 
 type RateLimit = { seconds: number } | null;
@@ -52,16 +53,16 @@ function CategoryDot({ category }: { category: string }) {
   );
 }
 
-export default function ChatInput({ onTransactionSaved }: Props) {
+const WELCOME_MSG: Message = {
+  id: 'welcome',
+  type: 'ai',
+  content: 'Selamat datang di Catatin! 👋\n\nPilih mode di atas, lalu ketik bebas:\n• Pengeluaran: "beli kopi 25rb tadi pagi"\n• Pemasukan: "terima gaji 5jt hari ini"\n\nCatatin yang rapikan kategori dan tanggalnya.',
+};
+
+export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
   const [mode, setMode] = useState<TransactionMode>('expense');
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      type: 'ai',
-      content: 'Selamat datang di Catatin. Ketik pengeluaranmu dalam satu kalimat bebas, contoh:\n\n"beli kopi 25rb tadi pagi"\n"naik grab ke kampus 18000 kemarin"\n"bayar spotify 54rb"',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([WELCOME_MSG]);
   const [isLoading, setIsLoading] = useState(false);
   const [savedConfirmIds, setSavedConfirmIds] = useState<Set<string>>(new Set());
   const [rateLimit, setRateLimit] = useState<RateLimit>(null);
@@ -70,6 +71,18 @@ export default function ChatInput({ onTransactionSaved }: Props) {
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const messageIdRef = useRef(1);
   const savedConfirmRef = useRef<Set<string>>(new Set());
+
+  // Reset chat when parent changes resetKey (e.g., user navigates away then back)
+  useEffect(() => {
+    if (resetKey === undefined) return;
+    setMessages([WELCOME_MSG]);
+    setMode('expense');
+    setInput('');
+    setIsLoading(false);
+    setSavedConfirmIds(new Set());
+    savedConfirmRef.current = new Set();
+    messageIdRef.current = 1;
+  }, [resetKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,15 +111,10 @@ export default function ChatInput({ onTransactionSaved }: Props) {
   };
 
   const handleModeSwitch = (newMode: TransactionMode) => {
-    // Only fire if actually switching to a different mode
+    // Only switch state, never add a message — header + placeholder already show the mode
     if (newMode === mode) return;
     setMode(newMode);
     setInput('');
-    const greetings: Record<TransactionMode, string> = {
-      expense: 'Mode pengeluaran aktif. Contoh: "beli kopi 25rb tadi pagi" atau "naik grab 18000 kemarin".',
-      income: 'Mode pemasukan aktif. Contoh: "terima gaji 5jt hari ini" atau "freelance desain logo 800rb".',
-    };
-    addMessage({ type: 'ai', content: greetings[newMode], mode: newMode });
   };
 
   const parseIncomeLocally = (text: string): Message['parsedData'] => {

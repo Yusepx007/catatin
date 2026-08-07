@@ -133,6 +133,13 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(todayMonth);
   const [activeMenu, setActiveMenu] = useState<'overview' | 'record' | 'history' | 'budget'>('overview');
   const [activeTab, setActiveTab] = useState<'transactions' | 'analytics'>('transactions');
+  const [chatResetKey, setChatResetKey] = useState(0);
+
+  const handleMenuChange = (menu: typeof activeMenu) => {
+    setActiveMenu(menu);
+    // Reset ChatInput every time user navigates to the record section
+    if (menu === 'record') setChatResetKey((k) => k + 1);
+  };
 
   const now = new Date();
   const [selectedYear, selectedMonthNumber] = selectedMonth.split('-').map(Number);
@@ -389,7 +396,7 @@ export default function DashboardPage() {
                 key={menu}
                 type="button"
                 className={`dashboard-menu-btn ${activeMenu === menu ? 'active' : ''}`}
-                onClick={() => setActiveMenu(menu as typeof activeMenu)}
+                onClick={() => handleMenuChange(menu as typeof activeMenu)}
               >
                 {label}
               </button>
@@ -399,7 +406,7 @@ export default function DashboardPage() {
           <div className="dashboard-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => setActiveMenu('record')}
+              onClick={() => handleMenuChange('record')}
               className="btn-primary"
               style={{ padding: '10px 14px', fontSize: 13 }}
             >
@@ -568,7 +575,7 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ minHeight: 500, display: activeMenu === 'record' ? 'block' : 'none' }}>
-            <ChatInput onTransactionSaved={handleRefresh} />
+            <ChatInput onTransactionSaved={handleRefresh} resetKey={chatResetKey} />
           </div>
 
           <section className="surface-card" style={{ padding: 22, display: activeMenu === 'history' ? 'block' : 'none' }}>
