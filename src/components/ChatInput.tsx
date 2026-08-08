@@ -56,7 +56,7 @@ function CategoryDot({ category }: { category: string }) {
 const WELCOME_MSG: Message = {
   id: 'welcome',
   type: 'ai',
-  content: 'Selamat datang di Catatin! 👋\n\nPilih mode di atas, lalu ketik bebas:\n• Pengeluaran: "beli kopi 25rb tadi pagi"\n• Pemasukan: "terima gaji 5jt hari ini"\n\nCatatin yang rapikan kategori dan tanggalnya.',
+  content: 'Selamat datang di Catatin!\n\nPilih mode di atas, lalu ketik bebas:\n• Pengeluaran: "beli kopi 25rb tadi pagi"\n• Pemasukan: "terima gaji 5jt hari ini"\n\nCatatin yang rapikan kategori dan tanggalnya.',
 };
 
 export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
