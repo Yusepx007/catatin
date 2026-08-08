@@ -37,10 +37,6 @@ BEGIN
   m3 := TO_CHAR(MAKE_DATE(y, m,   1) - INTERVAL '3 months', 'YYYY-MM');
   m4 := TO_CHAR(MAKE_DATE(y, m,   1) - INTERVAL '4 months', 'YYYY-MM');
 
-  -- ── Update profile Alex ──────────────────────────────────────────────
-  INSERT INTO public.profiles (user_id, full_name, email)
-  VALUES (uid, 'Alex', 'alex@catatin.demo')
-  ON CONFLICT (user_id) DO UPDATE SET full_name = 'Alex', email = 'alex@catatin.demo';
 
   -- ── BUDGETS ─────────────────────────────────────────────────────────
   INSERT INTO public.budgets (user_id, month, monthly_limit) VALUES
