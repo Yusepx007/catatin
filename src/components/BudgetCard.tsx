@@ -217,31 +217,54 @@ export default function BudgetCard({
         </div>
       )}
 
-      {/* Spent vs limit */}
-      <div style={{ marginBottom: 14 }}>
-        <div className="budget-usage-row">
-          <div>
-            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 3 }}>SUDAH DIPAKAI</p>
-            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: getAmountColor(), letterSpacing: 0, lineHeight: 1.15 }}>
-              Rp {totalSpent.toLocaleString('id-ID')}
-            </p>
-          </div>
-          <div className="budget-limit-box">
-            <p style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.06em', marginBottom: 5 }}>LIMIT BULANAN</p>
-            <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-              Rp {monthlyLimit.toLocaleString('id-ID')}
-            </p>
-          </div>
-        </div>
+      {/* Circular gauge */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '8px 0 16px' }}>
+        {(() => {
+          const r = 54;
+          const cx = 80;
+          const cy = 80;
+          const circumference = 2 * Math.PI * r;
+          const dash = (pct / 100) * circumference;
+          const gaugeColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#3b82f6';
+          return (
+            <svg width="160" height="160" viewBox="0 0 160 160">
+              {/* Track */}
+              <circle cx={cx} cy={cy} r={r} fill="none"
+                stroke="var(--border)" strokeWidth="12"/>
+              {/* Fill */}
+              <circle cx={cx} cy={cy} r={r} fill="none"
+                stroke={gaugeColor} strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={`${dash} ${circumference}`}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.34,1.56,0.64,1)' }}
+              />
+              {/* Center text */}
+              <text x={cx} y={cy - 8} textAnchor="middle" fill={gaugeColor}
+                fontSize="22" fontWeight="800" fontFamily="'Plus Jakarta Sans','Inter',sans-serif">
+                {Math.round(pct)}%
+              </text>
+              <text x={cx} y={cy + 12} textAnchor="middle" fill="var(--text-muted)"
+                fontSize="11" fontFamily="inherit">
+                terpakai
+              </text>
+            </svg>
+          );
+        })()}
 
-        <div className="progress-bar" style={{ height: 10, background: 'rgba(148, 163, 184, 0.12)' }}>
-          <div className="progress-fill" style={{ width: `${pct}%`, background: getBarColor() }} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>{Math.round(pct)}% terpakai</span>
-          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-            Sisa: Rp {Math.max(0, monthlyLimit - totalSpent).toLocaleString('id-ID')}
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 8 }}>
+          <div style={{ flex: 1, padding: '10px 12px', borderRadius: 12, background: 'var(--page-bg)', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>Terpakai</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Rp {totalSpent.toLocaleString('id-ID')}</p>
+          </div>
+          <div style={{ flex: 1, padding: '10px 12px', borderRadius: 12, background: 'var(--page-bg)', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>Sisa Budget</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#22c55e' }}>Rp {Math.max(0, monthlyLimit - totalSpent).toLocaleString('id-ID')}</p>
+          </div>
+          <div style={{ flex: 1, padding: '10px 12px', borderRadius: 12, background: 'var(--page-bg)', border: '1px solid var(--border)', textAlign: 'center' }}>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3 }}>Persentase</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#3b82f6' }}>{Math.round(pct)}%</p>
+          </div>
         </div>
       </div>
 

@@ -13,6 +13,9 @@ import WeeklyInsight from '@/components/WeeklyInsight';
 import TransactionList from '@/components/TransactionList';
 import AdminUserPanel from '@/components/AdminUserPanel';
 import { CATEGORY_COLORS, isExpenseCategory } from '@/lib/categories';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -120,6 +123,83 @@ function getMonthOptions(): string[] {
     options.push(`${y}-${m}`);
   }
   return options;
+}
+
+// ─── Trend Chart ──────────────────────────────────────────────────────────────
+
+function TrendChart({ transactions }: { transactions: Transaction[] }) {
+  // Build last 30 days
+  const days: { date: string; label: string; income: number; expense: number; balance: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    days.push({ date: dateStr, label, income: 0, expense: 0, balance: 0 });
+  }
+  transactions.forEach((t) => {
+    const day = days.find((d) => d.date === t.transaction_date);
+    if (!day) return;
+    if (t.type === 'income') day.income += t.amount;
+    else day.expense += t.amount;
+  });
+  // running balance
+  let running = 0;
+  days.forEach((d) => { running += d.income - d.expense; d.balance = running; });
+
+  const hasData = days.some((d) => d.income > 0 || d.expense > 0);
+
+  const fmt = (v: number) =>
+    v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}jt`
+    : v >= 1_000 ? `${(v / 1_000).toFixed(0)}rb` : String(v);
+
+  return (
+    <div className="surface-card" style={{ padding: 20 }}>
+      <div className="section-header" style={{ marginBottom: 16 }}>
+        <div>
+          <p className="section-title">Tren Keuangan (30 Hari Terakhir)</p>
+          <p className="section-subtitle">Pemasukan, pengeluaran & saldo bersih harian</p>
+        </div>
+        {!hasData && <span className="badge badge-gray">Belum ada data</span>}
+      </div>
+      {hasData ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={days} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15}/>
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
+            <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} interval={4}/>
+            <YAxis tickFormatter={fmt} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} width={38}/>
+            <Tooltip
+              contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, boxShadow: 'var(--shadow-md)' }}
+              labelStyle={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: 4 }}
+              formatter={(v, name) => [`Rp ${Number(v).toLocaleString('id-ID')}`, name === 'income' ? 'Pemasukan' : name === 'expense' ? 'Pengeluaran' : 'Saldo Bersih']}
+            />
+            <Legend formatter={(v) => v === 'income' ? 'Pemasukan' : v === 'expense' ? 'Pengeluaran' : 'Saldo Bersih'} wrapperStyle={{ fontSize: 12, paddingTop: 8 }}/>
+            <Area type="monotone" dataKey="income"   stroke="#22c55e" strokeWidth={2} fill="url(#colorIncome)"  dot={false}/>
+            <Area type="monotone" dataKey="expense"  stroke="#f97316" strokeWidth={2} fill="url(#colorExpense)" dot={false}/>
+            <Area type="monotone" dataKey="balance"  stroke="#8b5cf6" strokeWidth={2} fill="url(#colorBalance)" dot={false}/>
+          </AreaChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+          Catat beberapa transaksi untuk melihat tren
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -578,6 +658,10 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+
+              {/* 30-day trend chart */}
+              <TrendChart transactions={transactions} />
+
             </>
           )}
 
