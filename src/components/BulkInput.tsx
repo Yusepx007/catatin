@@ -263,56 +263,6 @@ export default function BulkInput({ userId, onSaved }: Props) {
 
   return (
     <div>
-      {/* Demo Banner CTA */}
-      <div style={{
-        marginBottom: 20,
-        padding: '16px 20px',
-        borderRadius: 16,
-        background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1))',
-        border: '1px solid rgba(34,197,94,0.25)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 12,
-      }}>
-        <div>
-          <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', marginBottom: 4 }}>
-            🎯 Butuh Data Lengkap untuk Demo Akun Alex?
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-            Sekali klik, 5 bulan transaksi (gaji, freelance, THR, grocery, tagihan) & budget akan terisi otomatis!
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={handleLoadDemoToTable}
-            style={{
-              padding: '9px 16px', borderRadius: 12,
-              background: 'var(--card-bg)', border: '1px solid var(--border)',
-              color: 'var(--text-primary)', fontWeight: 700, fontSize: 13,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            📋 Muat ke Tabel Dulu
-          </button>
-          <button
-            type="button"
-            onClick={handleDirectSeedDemo}
-            disabled={saving}
-            style={{
-              padding: '9px 20px', borderRadius: 12,
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#fff', border: 'none', fontWeight: 800, fontSize: 13,
-              cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-            }}
-          >
-            {saving ? 'Mengisi...' : '⚡ Generate 5 Bulan Data Langsung!'}
-          </button>
-        </div>
-      </div>
 
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
