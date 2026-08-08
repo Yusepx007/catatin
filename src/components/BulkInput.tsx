@@ -25,6 +25,116 @@ const blankRow = (): Row => ({
   date: today(),
 });
 
+// Helper: date relative to today
+const relDate = (monthsAgo: number, day: number) => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - monthsAgo);
+  d.setDate(day);
+  return d.toISOString().slice(0, 10);
+};
+
+const DEMO_DATA: Omit<Row, 'id'>[] = [
+  // Bulan ini
+  { type:'income',  description:'Gaji PT Kreasi Digital',         amount:'6000000',  category:'Gaji & Upah',          date: relDate(0,1)  },
+  { type:'income',  description:'Desain UI mobile app startup',   amount:'1500000',  category:'Freelance & Proyek',    date: relDate(0,6)  },
+  { type:'income',  description:'Return reksadana Bibit',         amount:'180000',   category:'Investasi',             date: relDate(0,14) },
+  { type:'expense', description:'Grocery Alfamart mingguan',      amount:'165000',   category:'Makanan & Minuman',     date: relDate(0,4)  },
+  { type:'expense', description:'Kopi Fore Coffee harian',        amount:'87500',    category:'Makanan & Minuman',     date: relDate(0,6)  },
+  { type:'expense', description:'GrabFood delivery weekend',      amount:'78000',    category:'Makanan & Minuman',     date: relDate(0,12) },
+  { type:'expense', description:'Snack & minuman WFH',            amount:'42000',    category:'Makanan & Minuman',     date: relDate(0,15) },
+  { type:'expense', description:'Token KRL Jakarta',              amount:'100000',   category:'Transportasi',          date: relDate(0,1)  },
+  { type:'expense', description:'Ojek online harian',             amount:'90000',    category:'Transportasi',          date: relDate(0,5)  },
+  { type:'expense', description:'Bensin Pertamax full tank',      amount:'70000',    category:'Transportasi',          date: relDate(0,10) },
+  { type:'expense', description:'Listrik PLN',                    amount:'295000',   category:'Tagihan & Utilitas',    date: relDate(0,5)  },
+  { type:'expense', description:'IndiHome internet',              amount:'350000',   category:'Tagihan & Utilitas',    date: relDate(0,5)  },
+  { type:'expense', description:'Pulsa Telkomsel',                amount:'50000',    category:'Tagihan & Utilitas',    date: relDate(0,3)  },
+  { type:'expense', description:'Kemeja kerja Brand Local 2 pcs', amount:'298000',   category:'Belanja',               date: relDate(0,8)  },
+  { type:'expense', description:'Mouse wireless Logitech',        amount:'199000',   category:'Belanja',               date: relDate(0,13) },
+  { type:'expense', description:'Netflix Premium',                amount:'54000',    category:'Hiburan',               date: relDate(0,1)  },
+  { type:'expense', description:'Spotify Premium',                amount:'54990',    category:'Hiburan',               date: relDate(0,1)  },
+  { type:'expense', description:'Nonton Bioskop XXI 2 tiket',     amount:'80000',    category:'Hiburan',               date: relDate(0,11) },
+  { type:'expense', description:'Vitamin C + Zinc suplemen',      amount:'48000',    category:'Kesehatan',             date: relDate(0,4)  },
+  { type:'expense', description:'Cicilan laptop Shopee 12x',      amount:'450000',   category:'Paylater & Cicilan',    date: relDate(0,15) },
+  { type:'expense', description:'Barbershop + cuci motor',        amount:'65000',    category:'Perawatan Diri',        date: relDate(0,8)  },
+  { type:'expense', description:'Infaq masjid + sedekah',         amount:'30000',    category:'Donasi & Sosial',       date: relDate(0,7)  },
+  // 1 bulan lalu
+  { type:'income',  description:'Gaji PT Kreasi Digital',         amount:'6000000',  category:'Gaji & Upah',          date: relDate(1,1)  },
+  { type:'income',  description:'Website company profile UMKM',   amount:'2000000',  category:'Freelance & Proyek',    date: relDate(1,18) },
+  { type:'income',  description:'Dividen saham BBCA',             amount:'210000',   category:'Investasi',             date: relDate(1,20) },
+  { type:'expense', description:'Grocery bulanan Giant',          amount:'420000',   category:'Makanan & Minuman',     date: relDate(1,3)  },
+  { type:'expense', description:'Team lunch restoran padang',     amount:'230000',   category:'Makanan & Minuman',     date: relDate(1,12) },
+  { type:'expense', description:'Kopi harian 4 minggu',           amount:'140000',   category:'Makanan & Minuman',     date: relDate(1,28) },
+  { type:'expense', description:'GrabFood delivery 5x',           amount:'125000',   category:'Makanan & Minuman',     date: relDate(1,22) },
+  { type:'expense', description:'KRL bulanan',                    amount:'100000',   category:'Transportasi',          date: relDate(1,1)  },
+  { type:'expense', description:'Ojek online 4 minggu',           amount:'160000',   category:'Transportasi',          date: relDate(1,28) },
+  { type:'expense', description:'Bensin motor 2x isi full',       amount:'135000',   category:'Transportasi',          date: relDate(1,14) },
+  { type:'expense', description:'Listrik PLN',                    amount:'280000',   category:'Tagihan & Utilitas',    date: relDate(1,5)  },
+  { type:'expense', description:'IndiHome internet',              amount:'350000',   category:'Tagihan & Utilitas',    date: relDate(1,5)  },
+  { type:'expense', description:'Pulsa Telkomsel',                amount:'50000',    category:'Tagihan & Utilitas',    date: relDate(1,4)  },
+  { type:'expense', description:'Sepatu Specs olahraga',          amount:'399000',   category:'Belanja',               date: relDate(1,16) },
+  { type:'expense', description:'Buku Rich Dad Poor Dad',         amount:'89000',    category:'Pendidikan',            date: relDate(1,20) },
+  { type:'expense', description:'Netflix + Spotify',              amount:'108990',   category:'Hiburan',               date: relDate(1,1)  },
+  { type:'expense', description:'Karaoke bersama teman',          amount:'320000',   category:'Hiburan',               date: relDate(1,25) },
+  { type:'expense', description:'Periksa dokter + obat',          amount:'175000',   category:'Kesehatan',             date: relDate(1,9)  },
+  { type:'expense', description:'Cicilan laptop Shopee',          amount:'450000',   category:'Paylater & Cicilan',    date: relDate(1,15) },
+  { type:'expense', description:'Sumbang nikahan teman SMA',      amount:'300000',   category:'Donasi & Sosial',       date: relDate(1,22) },
+  // 2 bulan lalu
+  { type:'income',  description:'Gaji PT Kreasi Digital',         amount:'6000000',  category:'Gaji & Upah',          date: relDate(2,1)  },
+  { type:'income',  description:'Jual laptop lama di OLX',        amount:'3500000',  category:'Penjualan',             date: relDate(2,15) },
+  { type:'income',  description:'Freelance ilustrasi konten',     amount:'800000',   category:'Freelance & Proyek',    date: relDate(2,10) },
+  { type:'expense', description:'Grocery mingguan x4',            amount:'360000',   category:'Makanan & Minuman',     date: relDate(2,28) },
+  { type:'expense', description:'Makan malam Japanese ramen',     amount:'155000',   category:'Makanan & Minuman',     date: relDate(2,14) },
+  { type:'expense', description:'GrabFood delivery',              amount:'110000',   category:'Makanan & Minuman',     date: relDate(2,24) },
+  { type:'expense', description:'KRL bulanan',                    amount:'100000',   category:'Transportasi',          date: relDate(2,1)  },
+  { type:'expense', description:'Bensin full tank 2x',            amount:'135000',   category:'Transportasi',          date: relDate(2,15) },
+  { type:'expense', description:'Uber airport jemput teman',      amount:'95000',    category:'Transportasi',          date: relDate(2,27) },
+  { type:'expense', description:'Listrik PLN',                    amount:'275000',   category:'Tagihan & Utilitas',    date: relDate(2,5)  },
+  { type:'expense', description:'IndiHome internet',              amount:'350000',   category:'Tagihan & Utilitas',    date: relDate(2,5)  },
+  { type:'expense', description:'Monitor 24 inch second Tokped',  amount:'1200000',  category:'Belanja',               date: relDate(2,8)  },
+  { type:'expense', description:'Keyboard mechanical Rexus',      amount:'350000',   category:'Belanja',               date: relDate(2,8)  },
+  { type:'expense', description:'Tiket konser indie',             amount:'350000',   category:'Hiburan',               date: relDate(2,19) },
+  { type:'expense', description:'Netflix + Spotify',              amount:'108990',   category:'Hiburan',               date: relDate(2,1)  },
+  { type:'expense', description:'Cicilan laptop Shopee',          amount:'450000',   category:'Paylater & Cicilan',    date: relDate(2,15) },
+  { type:'expense', description:'Kursus UI/UX Udemy 3 course',   amount:'250000',   category:'Pendidikan',            date: relDate(2,6)  },
+  // 3 bulan lalu (Lebaran)
+  { type:'income',  description:'Gaji PT Kreasi Digital',         amount:'6000000',  category:'Gaji & Upah',          date: relDate(3,1)  },
+  { type:'income',  description:'THR dari kantor 1x gaji',        amount:'6000000',  category:'Bonus & THR',           date: relDate(3,12) },
+  { type:'income',  description:'Angpao Lebaran keluarga besar',  amount:'950000',   category:'Hadiah & Hibah',        date: relDate(3,20) },
+  { type:'expense', description:'Belanja Lebaran bahan makanan',  amount:'680000',   category:'Makanan & Minuman',     date: relDate(3,8)  },
+  { type:'expense', description:'Opor ketupat rendang Lebaran',   amount:'380000',   category:'Makanan & Minuman',     date: relDate(3,19) },
+  { type:'expense', description:'Makan malam keluarga besar',     amount:'550000',   category:'Makanan & Minuman',     date: relDate(3,21) },
+  { type:'expense', description:'Kue kering & hampers Lebaran',   amount:'320000',   category:'Makanan & Minuman',     date: relDate(3,10) },
+  { type:'expense', description:'Tiket kereta mudik PP',          amount:'760000',   category:'Transportasi',          date: relDate(3,4)  },
+  { type:'expense', description:'Bensin mobil selama mudik',      amount:'280000',   category:'Transportasi',          date: relDate(3,18) },
+  { type:'expense', description:'Listrik PLN',                    amount:'265000',   category:'Tagihan & Utilitas',    date: relDate(3,5)  },
+  { type:'expense', description:'IndiHome internet',              amount:'350000',   category:'Tagihan & Utilitas',    date: relDate(3,5)  },
+  { type:'expense', description:'Baju Lebaran family 5 stel',     amount:'1250000',  category:'Belanja',               date: relDate(3,7)  },
+  { type:'expense', description:'Parcel Lebaran untuk ortu',      amount:'450000',   category:'Belanja',               date: relDate(3,11) },
+  { type:'expense', description:'Netflix + Spotify',              amount:'108990',   category:'Hiburan',               date: relDate(3,1)  },
+  { type:'expense', description:'Wisata keluarga Prambanan',      amount:'220000',   category:'Hiburan',               date: relDate(3,22) },
+  { type:'expense', description:'Cicilan laptop Shopee',          amount:'450000',   category:'Paylater & Cicilan',    date: relDate(3,15) },
+  { type:'expense', description:'Zakat fitrah 5 jiwa',            amount:'175000',   category:'Donasi & Sosial',       date: relDate(3,17) },
+  { type:'expense', description:'THR ART + parkir langganan',     amount:'350000',   category:'Donasi & Sosial',       date: relDate(3,18) },
+  // 4 bulan lalu
+  { type:'income',  description:'Gaji PT Kreasi Digital',         amount:'5800000',  category:'Gaji & Upah',          date: relDate(4,1)  },
+  { type:'income',  description:'Motion graphic video company',   amount:'1200000',  category:'Freelance & Proyek',    date: relDate(4,22) },
+  { type:'expense', description:'Belanja bulanan supermarket',    amount:'398000',   category:'Makanan & Minuman',     date: relDate(4,4)  },
+  { type:'expense', description:'Makan tim saat deadline',        amount:'285000',   category:'Makanan & Minuman',     date: relDate(4,28) },
+  { type:'expense', description:'Kopi & snack harian 1 bulan',   amount:'180000',   category:'Makanan & Minuman',     date: relDate(4,25) },
+  { type:'expense', description:'KRL bulanan',                    amount:'100000',   category:'Transportasi',          date: relDate(4,1)  },
+  { type:'expense', description:'Ojek online 4 minggu',           amount:'155000',   category:'Transportasi',          date: relDate(4,28) },
+  { type:'expense', description:'Listrik PLN',                    amount:'268000',   category:'Tagihan & Utilitas',    date: relDate(4,5)  },
+  { type:'expense', description:'IndiHome internet',              amount:'350000',   category:'Tagihan & Utilitas',    date: relDate(4,5)  },
+  { type:'expense', description:'Smartwatch Amazfit GTS',         amount:'699000',   category:'Belanja',               date: relDate(4,22) },
+  { type:'expense', description:'Celana jogger Erigo 2 pcs',      amount:'220000',   category:'Belanja',               date: relDate(4,18) },
+  { type:'expense', description:'Netflix + Spotify',              amount:'108990',   category:'Hiburan',               date: relDate(4,1)  },
+  { type:'expense', description:'Bowling + arcade 3 orang',       amount:'120000',   category:'Hiburan',               date: relDate(4,27) },
+  { type:'expense', description:'Medical checkup tahunan klinik', amount:'350000',   category:'Kesehatan',             date: relDate(4,10) },
+  { type:'expense', description:'Cicilan laptop Shopee',          amount:'450000',   category:'Paylater & Cicilan',    date: relDate(4,15) },
+  { type:'expense', description:'Donasi yayasan anak yatim',      amount:'50000',    category:'Donasi & Sosial',       date: relDate(4,11) },
+];
+
 type Props = { userId: string; onSaved: () => void };
 
 export default function BulkInput({ userId, onSaved }: Props) {
@@ -86,11 +196,124 @@ export default function BulkInput({ userId, onSaved }: Props) {
     }
   };
 
+  const handleLoadDemoToTable = () => {
+    const loadedRows: Row[] = DEMO_DATA.map((d) => ({
+      id: ++rowId,
+      type: d.type as 'expense' | 'income',
+      description: d.description,
+      amount: d.amount,
+      category: d.category,
+      date: d.date,
+    }));
+    setRows(loadedRows);
+  };
+
+  const handleDirectSeedDemo = async () => {
+    if (!userId) return;
+    setSaving(true);
+    setResult(null);
+
+    try {
+      // 1. Prepare 5 months of budgets
+      const today = new Date();
+      const budgetInserts = [0, 1, 2, 3, 4].map((mAgo) => {
+        const d = new Date(today.getFullYear(), today.getMonth() - mAgo, 1);
+        const monthStr = d.toISOString().slice(0, 7);
+        const limit = mAgo <= 1 ? 5000000 : mAgo <= 3 ? 4500000 : 4000000;
+        return {
+          user_id: userId,
+          month: monthStr,
+          monthly_limit: limit,
+        };
+      });
+
+      await supabase.from('budgets').upsert(budgetInserts, { onConflict: 'user_id,month' });
+
+      // 2. Prepare transaction inserts
+      const txInserts = DEMO_DATA.map((d) => ({
+        user_id: userId,
+        type: d.type,
+        category: d.category,
+        description: d.description,
+        amount: Number(d.amount),
+        transaction_date: d.date,
+        raw_text: `${d.description} ${d.amount}`,
+      }));
+
+      // Insert in batch
+      const { error } = await supabase.from('transactions').insert(txInserts);
+
+      if (error) {
+        setResult({ ok: 0, fail: DEMO_DATA.length });
+      } else {
+        setResult({ ok: DEMO_DATA.length, fail: 0 });
+        setRows([blankRow(), blankRow(), blankRow()]);
+        onSaved();
+      }
+    } catch (err) {
+      console.error(err);
+      setResult({ ok: 0, fail: DEMO_DATA.length });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const categories = (type: 'expense' | 'income') =>
     type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
   return (
     <div>
+      {/* Demo Banner CTA */}
+      <div style={{
+        marginBottom: 20,
+        padding: '16px 20px',
+        borderRadius: 16,
+        background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.1))',
+        border: '1px solid rgba(34,197,94,0.25)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 12,
+      }}>
+        <div>
+          <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-primary)', marginBottom: 4 }}>
+            🎯 Butuh Data Lengkap untuk Demo Akun Alex?
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+            Sekali klik, 5 bulan transaksi (gaji, freelance, THR, grocery, tagihan) & budget akan terisi otomatis!
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handleLoadDemoToTable}
+            style={{
+              padding: '9px 16px', borderRadius: 12,
+              background: 'var(--card-bg)', border: '1px solid var(--border)',
+              color: 'var(--text-primary)', fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            📋 Muat ke Tabel Dulu
+          </button>
+          <button
+            type="button"
+            onClick={handleDirectSeedDemo}
+            disabled={saving}
+            style={{
+              padding: '9px 20px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff', border: 'none', fontWeight: 800, fontSize: 13,
+              cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+            }}
+          >
+            {saving ? 'Mengisi...' : '⚡ Generate 5 Bulan Data Langsung!'}
+          </button>
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
