@@ -164,6 +164,32 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
     }
   };
 
+  const splitMultiItemText = (text: string): string[] => {
+    const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length >= 3);
+    const result: string[] = [];
+
+    for (const line of rawLines) {
+      const pattern = /(\brp\.?\s*)?(\d{1,3}(?:[.]\d{3})+|\d+(?:[,.]\d+)?)\s*(rb|ribu|k|jt|juta|mio)?\b/gi;
+      const matches = Array.from(line.matchAll(pattern));
+
+      if (matches.length > 1) {
+        let lastIdx = 0;
+        for (let i = 0; i < matches.length; i++) {
+          const nextIdx = matches[i + 1] ? matches[i + 1].index! : line.length;
+          const segment = line.slice(lastIdx, nextIdx).trim();
+          if (segment.length >= 3) {
+            result.push(segment);
+          }
+          lastIdx = nextIdx;
+        }
+      } else {
+        result.push(line);
+      }
+    }
+
+    return result.length > 0 ? result : [text];
+  };
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
@@ -176,86 +202,96 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
       return;
     }
 
+    const items = splitMultiItemText(text);
+
     setInput('');
     addMessage({ type: 'user', content: text, mode });
     setIsLoading(true);
 
-    // For income, use local parsing since the API is expense-only
-    if (mode === 'income') {
-      try {
-        const parsedData = parseIncomeLocally(text);
-        addMessage({
-          type: 'confirm',
-          content: 'Pemasukan berhasil dibaca. Apakah datanya sudah benar?',
-          rawText: text,
-          mode,
-          parsedData,
-        });
-      } catch {
-        addMessage({ type: 'error', content: 'Gagal membaca pemasukan. Coba tulis lebih spesifik.' });
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
     try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('Sesi tidak valid. Silakan masuk kembali.');
+      const { parseTransactionWithRules } = await import('@/lib/catatin-ai');
+      let successCount = 0;
 
-      const res = await fetch('/api/parse-transaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ rawText: text }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (res.status === 429) {
-        const match = (data.error as string).match(/(\d+) detik/);
-        const secs = match ? parseInt(match[1]) : 60;
-        setRateLimit({ seconds: secs });
-        startCountdown(secs);
-        addMessage({ type: 'error', content: data.error });
-        return;
-      }
-
-      if (!res.ok) throw new Error(data.error || 'Parsing gagal');
-
-      addMessage({
-        type: 'confirm',
-        content: 'Transaksi berhasil diparse. Apakah datanya sudah benar?',
-        rawText: text,
-        mode,
-        parsedData: data.data,
-      });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
-      const isNetworkError =
-        msg.toLowerCase().includes('failed to fetch') ||
-        msg.toLowerCase().includes('network') ||
-        msg.toLowerCase().includes('load failed');
-
-      if (isNetworkError) {
+      for (const itemText of items) {
         try {
-          await addFallbackParsedMessage(text);
-          return;
-        } catch (fallbackErr: unknown) {
-          const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : msg;
-          addMessage({ type: 'error', content: fallbackMsg });
-          return;
+          const parsedData = mode === 'income'
+            ? parseIncomeLocally(itemText)
+            : parseTransactionWithRules(itemText);
+
+          addMessage({
+            type: 'confirm',
+            content: mode === 'income'
+              ? 'Pemasukan berhasil dibaca. Apakah datanya sudah benar?'
+              : 'Transaksi berhasil dibaca. Apakah datanya sudah benar?',
+            rawText: itemText,
+            mode,
+            parsedData,
+          });
+          successCount++;
+        } catch {
+          // Skip unparseable lines
         }
       }
 
+      if (successCount === 0) {
+        addMessage({
+          type: 'error',
+          content: 'Nominal belum terbaca. Contoh: "beli kopi 25rb" atau "terima gaji 5jt".',
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal membaca transaksi.';
       addMessage({ type: 'error', content: msg });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSaveAll = async () => {
+    const unsaved = messages.filter(
+      (m) => m.type === 'confirm' && !savedConfirmRef.current.has(m.id) && m.parsedData
+    );
+    if (unsaved.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Sesi tidak valid. Silakan masuk kembali.');
+
+      const inserts = unsaved.map((m) => {
+        markConfirmSaved(m.id, true);
+        const txMode = m.mode ?? 'expense';
+        return {
+          user_id: user.id,
+          raw_text: m.rawText || m.parsedData!.description,
+          category: m.parsedData!.category,
+          amount: m.parsedData!.amount,
+          transaction_date: m.parsedData!.transaction_date,
+          description: m.parsedData!.description,
+          type: txMode,
+        };
+      });
+
+      const { error } = await supabase.from('transactions').insert(inserts);
+      if (error) throw error;
+
+      addMessage({
+        type: 'success',
+        content: `Berhasil menyimpan ${inserts.length} transaksi sekaligus!`,
+      });
+      onTransactionSaved();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal menyimpan semua';
+      addMessage({ type: 'error', content: `Gagal menyimpan: ${msg}` });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const unsavedConfirms = messages.filter(
+    (m) => m.type === 'confirm' && !savedConfirmIds.has(m.id) && m.parsedData
+  );
 
   const markConfirmSaved = (messageId: string, saved: boolean) => {
     if (saved) {
@@ -432,7 +468,7 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
             {countdown > 0
               ? `Tunggu ${countdown} detik sebelum kirim lagi`
               : isLoading ? 'Catatin sedang membaca...'
-              : 'Ketik bebas, Catatin yang rapikan'}
+              : 'Ketik bebas (bisa banyak baris sekaligus), Catatin yang rapikan'}
           </p>
         </div>
       </div>
@@ -448,114 +484,152 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.96))',
       }}>
         {messages.map((msg) => (
-          <div key={msg.id} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start',
-            animation: 'fadeInUp 0.25s ease forwards',
-          }}>
+          <div key={msg.id}>
             {msg.type === 'user' && (
-              <div className="chat-bubble-user" style={{
-                background: msg.mode === 'income'
-                  ? 'rgba(129, 140, 248, 0.14)'
-                  : undefined,
-                borderColor: msg.mode === 'income'
-                  ? 'rgba(129, 140, 248, 0.2)'
-                  : undefined,
-                color: msg.mode === 'income' ? '#4338ca' : undefined,
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                <div style={{
+                  background: msg.mode === 'income' ? 'linear-gradient(135deg, #6366f1, #818cf8)' : accentGradient,
+                  color: 'white',
+                  borderRadius: '16px 16px 4px 16px',
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  maxWidth: '80%',
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  boxShadow: '0 4px 12px rgba(15,23,42,0.1)',
+                }}>
+                  {msg.content}
+                </div>
+              </div>
+            )}
+
+            {msg.type === 'ai' && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 4 }}>
+                <div style={{
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '16px 16px 16px 4px',
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  maxWidth: '85%',
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {msg.content}
+                </div>
+              </div>
+            )}
+
+            {msg.type === 'error' && (
+              <div style={{
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.2)',
+                color: '#ef4444',
+                borderRadius: 14,
+                padding: '10px 14px',
+                fontSize: 13,
+                fontWeight: 500,
               }}>
                 {msg.content}
               </div>
             )}
 
-            {(msg.type === 'ai' || msg.type === 'success' || msg.type === 'error') && (
-              <div className="chat-bubble-ai" style={{
-                borderColor: msg.type === 'success' ? 'rgba(16,185,129,0.3)'
-                  : msg.type === 'error' ? 'rgba(239,68,68,0.3)' : undefined,
-                background: msg.type === 'success' ? 'rgba(16,185,129,0.06)'
-                  : msg.type === 'error' ? 'rgba(239,68,68,0.06)' : undefined,
+            {msg.type === 'success' && (
+              <div style={{
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.2)',
+                color: '#16a34a',
+                borderRadius: 14,
+                padding: '10px 14px',
+                fontSize: 13,
+                fontWeight: 600,
               }}>
-                <p style={{ whiteSpace: 'pre-line', lineHeight: 1.65, fontSize: 14 }}>
-                  {msg.content}
-                </p>
+                {msg.content}
               </div>
             )}
 
             {msg.type === 'confirm' && msg.parsedData && (
-              <div style={{ maxWidth: '92%' }}>
-                <div className="chat-bubble-ai" style={{ marginBottom: 8 }}>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
-                    {msg.content}
-                  </p>
-                  {/* Result card */}
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.92)',
-                    border: `1px solid ${msg.mode === 'income' ? 'rgba(129,140,248,0.25)' : 'var(--border-light)'}`,
-                    borderRadius: 16,
-                    padding: 16,
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      {msg.mode === 'income' ? (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '4px 10px',
-                          borderRadius: 20,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          background: 'rgba(129,140,248,0.1)',
-                          color: '#6366f1',
-                          border: '1px solid rgba(129,140,248,0.2)',
-                        }}>
-                          <CategoryDot category={msg.parsedData.category} />
-                          {msg.parsedData.category}
-                        </span>
-                      ) : (
-                        <span className={`category-badge ${isExpenseCategory(msg.parsedData.category) ? CATEGORY_CLASSES[msg.parsedData.category] : 'cat-other'}`}>
-                          <CategoryDot category={msg.parsedData.category} />
-                          {msg.parsedData.category}
-                        </span>
-                      )}
+              <div style={{
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 18,
+                padding: 16,
+                boxShadow: 'var(--shadow-sm)',
+                animation: 'fadeInUp 0.25s ease',
+              }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12, fontWeight: 500 }}>
+                  {msg.content}
+                </p>
+                <div style={{
+                  padding: 14,
+                  borderRadius: 14,
+                  background: 'var(--page-bg)',
+                  border: '1px solid var(--border)',
+                  marginBottom: 14,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                    {msg.mode === 'income' ? (
                       <span style={{
-                        fontWeight: 800,
-                        fontSize: 17,
-                        color: msg.mode === 'income' ? '#6366f1' : 'var(--accent-green-light)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: 'rgba(129,140,248,0.1)',
+                        color: '#6366f1',
+                        border: '1px solid rgba(129,140,248,0.2)',
                       }}>
-                        {msg.mode === 'income' ? '+' : ''}Rp {msg.parsedData.amount.toLocaleString('id-ID')}
+                        <CategoryDot category={msg.parsedData.category} />
+                        {msg.parsedData.category}
                       </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                      <div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2, letterSpacing: '0.05em' }}>KETERANGAN</p>
-                        <p style={{ fontSize: 13 }}>{msg.parsedData.description}</p>
-                      </div>
-                      <div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2, letterSpacing: '0.05em' }}>TANGGAL</p>
-                        <p style={{ fontSize: 13 }}>
-                          {new Date(msg.parsedData.transaction_date + 'T00:00:00').toLocaleDateString('id-ID', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Editable category for income */}
-                    {msg.mode === 'income' && (
-                      <div style={{ marginTop: 12 }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4, letterSpacing: '0.05em' }}>KATEGORI PEMASUKAN</p>
-                        <select
-                          className="input-field"
-                          defaultValue={msg.parsedData.category}
-                          onChange={(e) => { msg.parsedData!.category = e.target.value; }}
-                          style={{ padding: '8px 10px', fontSize: 12 }}
-                        >
-                          {INCOME_CATEGORIES.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
+                    ) : (
+                      <span className={`category-badge ${isExpenseCategory(msg.parsedData.category) ? CATEGORY_CLASSES[msg.parsedData.category] : 'cat-other'}`}>
+                        <CategoryDot category={msg.parsedData.category} />
+                        {msg.parsedData.category}
+                      </span>
                     )}
+                    <span style={{
+                      fontWeight: 800,
+                      fontSize: 17,
+                      color: msg.mode === 'income' ? '#6366f1' : 'var(--accent-green-light)',
+                    }}>
+                      {msg.mode === 'income' ? '+' : ''}Rp {msg.parsedData.amount.toLocaleString('id-ID')}
+                    </span>
                   </div>
+                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                    <div>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2, letterSpacing: '0.05em' }}>KETERANGAN</p>
+                      <p style={{ fontSize: 13 }}>{msg.parsedData.description}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2, letterSpacing: '0.05em' }}>TANGGAL</p>
+                      <p style={{ fontSize: 13 }}>
+                        {new Date(msg.parsedData.transaction_date + 'T00:00:00').toLocaleDateString('id-ID', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Editable category for income */}
+                  {msg.mode === 'income' && (
+                    <div style={{ marginTop: 12 }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4, letterSpacing: '0.05em' }}>KATEGORI PEMASUKAN</p>
+                      <select
+                        className="input-field"
+                        defaultValue={msg.parsedData.category}
+                        onChange={(e) => { msg.parsedData!.category = e.target.value; }}
+                        style={{ padding: '8px 10px', fontSize: 12 }}
+                      >
+                        {INCOME_CATEGORIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
@@ -601,57 +675,72 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
           </div>
         ))}
 
-        {isLoading && (
-          <div className="chat-bubble-ai" style={{ alignSelf: 'flex-start' }}>
-            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-              {[0, 1, 2].map((i) => (
-                <div key={i} style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: '50%',
-                  background: isExpenseMode ? 'var(--accent-green)' : '#818cf8',
-                  opacity: 0.7,
-                  animation: `pulse-glow 1.2s ease ${i * 0.2}s infinite`,
-                }} />
-              ))}
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick examples */}
+      {/* Batch Save Action Bar */}
+      {unsavedConfirms.length > 1 && (
+        <div style={{
+          padding: '10px 16px',
+          background: 'rgba(248, 250, 252, 0.95)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+            {unsavedConfirms.length} transaksi siap disimpan
+          </span>
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={isLoading}
+            style={{
+              padding: '8px 18px',
+              borderRadius: 10,
+              background: isExpenseMode
+                ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                : 'linear-gradient(135deg, #6366f1, #818cf8)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              boxShadow: '0 4px 12px rgba(15,23,42,0.15)',
+            }}
+          >
+            Simpan Semua ({unsavedConfirms.length})
+          </button>
+        </div>
+      )}
+
+      {/* Examples pill list */}
       <div style={{
-        padding: '10px 14px',
-        borderTop: '1px solid var(--border)',
         display: 'flex',
         gap: 6,
-        flexWrap: 'wrap',
-        background: 'rgba(248, 250, 252, 0.86)',
+        padding: '8px 14px',
+        overflowX: 'auto',
+        background: 'rgba(248, 250, 252, 0.9)',
+        borderTop: '1px solid var(--border)',
       }}>
         {examples.map((ex) => (
           <button
             key={ex}
+            type="button"
             onClick={() => setInput(ex)}
             style={{
-              background: 'rgba(148, 163, 184, 0.05)',
-              border: '1px solid var(--border)',
+              padding: '5px 12px',
               borderRadius: 20,
-              padding: '5px 10px',
-              color: 'var(--text-soft)',
+              border: '1px solid var(--border)',
+              background: 'var(--card-bg)',
+              color: 'var(--text-muted)',
               fontSize: 11,
+              whiteSpace: 'nowrap',
               cursor: 'pointer',
-              transition: 'all 0.2s',
               fontFamily: 'inherit',
-            }}
-            onMouseEnter={(e) => {
-              const accent = isExpenseMode ? 'rgba(134, 239, 172, 0.22)' : 'rgba(129, 140, 248, 0.22)';
-              (e.currentTarget).style.color = 'var(--text-secondary)';
-              (e.currentTarget).style.borderColor = accent;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget).style.color = 'var(--text-soft)';
-              (e.currentTarget).style.borderColor = 'var(--border)';
+              transition: 'all 0.15s',
             }}
           >
             {ex}
@@ -659,12 +748,12 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         ))}
       </div>
 
-      {/* Rate limit bar */}
-      {countdown > 0 && rateLimit && (
+      {/* Rate limit warning */}
+      {rateLimit && countdown > 0 && (
         <div style={{
-          padding: '8px 14px',
-          background: 'rgba(245,158,11,0.06)',
-          borderTop: '1px solid rgba(245,158,11,0.18)',
+          padding: '10px 16px',
+          background: 'rgba(245, 158, 11, 0.08)',
+          borderTop: '1px solid rgba(245, 158, 11, 0.2)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
             <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 500 }}>
@@ -686,29 +775,34 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         </div>
       )}
 
-      {/* Input */}
+      {/* Textarea Input Box */}
       <div style={{
         padding: '12px 14px',
         display: 'flex',
         gap: 10,
+        alignItems: 'flex-end',
         background: 'rgba(248, 250, 252, 0.9)',
         borderTop: countdown > 0 ? 'none' : '1px solid var(--border)',
       }}>
-        <input
+        <textarea
           id="chat-input-field"
-          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder={
             countdown > 0
               ? `Tunggu ${countdown} detik...`
               : isExpenseMode
-              ? 'Contoh: beli nasi goreng 20rb tadi malam'
-              : 'Contoh: terima gaji 5jt hari ini'
+              ? 'Ketik atau salin banyak baris sekaligus:\nbeli kopi 25rb tadi pagi\ngrabfood 78rb'
+              : 'Ketik atau salin banyak baris sekaligus:\ngaji 6jt hari ini\nfreelance desain 1.5jt'
           }
           disabled={isLoading || countdown > 0}
-          maxLength={500}
+          rows={Math.min(5, Math.max(1, (input.match(/\n/g) || []).length + 1))}
           className="input-field"
           style={{
             background: '#ffffff',
@@ -716,6 +810,10 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
             opacity: countdown > 0 ? 0.5 : 1,
             cursor: countdown > 0 ? 'not-allowed' : 'text',
             borderColor: !isExpenseMode && input ? 'rgba(129,140,248,0.4)' : undefined,
+            resize: 'none',
+            padding: '10px 14px',
+            lineHeight: 1.4,
+            borderRadius: 12,
           }}
         />
         <button
