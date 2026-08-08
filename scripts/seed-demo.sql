@@ -20,7 +20,7 @@
 
 DO $$
 DECLARE
-  uid TEXT := 'PASTE_UUID_ALEX_DISINI';   -- ← GANTI DENGAN UUID DARI SUPABASE AUTH
+  uid TEXT := '5be48978-69e3-46a5-8bac-5211e6e08a14';  -- UUID Alex
 
   y  INT := EXTRACT(YEAR  FROM CURRENT_DATE)::INT;
   m  INT := EXTRACT(MONTH FROM CURRENT_DATE)::INT;
@@ -29,10 +29,7 @@ DECLARE
 
 BEGIN
 
-  -- Validasi: pastikan sudah diganti
-  IF uid = 'PASTE_UUID_ALEX_DISINI' THEN
-    RAISE EXCEPTION '❌ Belum diganti! Isi uid dengan UUID Alex dari Supabase → Authentication → Users';
-  END IF;
+  -- UUID Alex sudah benar: 5be48978-69e3-46a5-8bac-5211e6e08a14
 
   m0 := TO_CHAR(MAKE_DATE(y, m,   1), 'YYYY-MM');
   m1 := TO_CHAR(MAKE_DATE(y, m,   1) - INTERVAL '1 month',  'YYYY-MM');
@@ -41,12 +38,12 @@ BEGIN
   m4 := TO_CHAR(MAKE_DATE(y, m,   1) - INTERVAL '4 months', 'YYYY-MM');
 
   -- ── Update profile Alex ──────────────────────────────────────────────
-  INSERT INTO profiles (user_id, full_name, email)
+  INSERT INTO public.profiles (user_id, full_name, email)
   VALUES (uid, 'Alex', 'alex@catatin.demo')
   ON CONFLICT (user_id) DO UPDATE SET full_name = 'Alex', email = 'alex@catatin.demo';
 
   -- ── BUDGETS ─────────────────────────────────────────────────────────
-  INSERT INTO budgets (user_id, month, monthly_limit) VALUES
+  INSERT INTO public.budgets (user_id, month, monthly_limit) VALUES
     (uid, m0, 5000000),
     (uid, m1, 5000000),
     (uid, m2, 4500000),
@@ -56,7 +53,7 @@ BEGIN
 
   -- ══ BULAN INI ══════════════════════════════════════════════════════
 
-  INSERT INTO transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
+  INSERT INTO public.transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
 
   -- Pemasukan
   (uid,'income','Gaji & Upah',       'Gaji bulan ini PT Kreasi Digital',  6000000, m0||'-01','gaji 6jt'),
@@ -98,7 +95,7 @@ BEGIN
 
   -- ══ 1 BULAN LALU ═══════════════════════════════════════════════════
 
-  INSERT INTO transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
+  INSERT INTO public.transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
 
   (uid,'income','Gaji & Upah',        'Gaji PT Kreasi Digital',            6000000, m1||'-01','gaji 6jt'),
   (uid,'income','Freelance & Proyek', 'Website company profile UMKM',      2000000, m1||'-18','freelance web 2jt'),
@@ -133,7 +130,7 @@ BEGIN
 
   -- ══ 2 BULAN LALU ═══════════════════════════════════════════════════
 
-  INSERT INTO transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
+  INSERT INTO public.transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
 
   (uid,'income','Gaji & Upah',        'Gaji PT Kreasi Digital',            6000000, m2||'-01','gaji 6jt'),
   (uid,'income','Freelance & Proyek', 'Ilustrasi konten sosmed brand',      800000, m2||'-10','freelance ilustrasi 800rb'),
@@ -166,7 +163,7 @@ BEGIN
 
   -- ══ 3 BULAN LALU (BULAN LEBARAN) ═══════════════════════════════════
 
-  INSERT INTO transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
+  INSERT INTO public.transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
 
   (uid,'income','Gaji & Upah',    'Gaji PT Kreasi Digital',               6000000, m3||'-01','gaji 6jt'),
   (uid,'income','Bonus & THR',    'THR dari kantor 1x gaji',              6000000, m3||'-12','thr 6jt'),
@@ -198,7 +195,7 @@ BEGIN
 
   -- ══ 4 BULAN LALU ═══════════════════════════════════════════════════
 
-  INSERT INTO transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
+  INSERT INTO public.transactions (user_id, type, category, description, amount, transaction_date, raw_text) VALUES
 
   (uid,'income','Gaji & Upah',        'Gaji PT Kreasi Digital',            5800000, m4||'-01','gaji 5.8jt'),
   (uid,'income','Freelance & Proyek', 'Motion graphic video company',       1200000, m4||'-22','freelance motion 1.2jt'),
