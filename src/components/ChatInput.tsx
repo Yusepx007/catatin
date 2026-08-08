@@ -264,11 +264,11 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         const txMode = m.mode ?? 'expense';
         return {
           user_id: user.id,
-          raw_text: m.rawText || m.parsedData!.description,
+          raw_text: (m.rawText || m.parsedData!.description).slice(0, 480),
           category: m.parsedData!.category,
           amount: m.parsedData!.amount,
           transaction_date: m.parsedData!.transaction_date,
-          description: m.parsedData!.description,
+          description: m.parsedData!.description.slice(0, 120),
           type: txMode,
         };
       });
@@ -281,8 +281,8 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         content: `Berhasil menyimpan ${inserts.length} transaksi sekaligus!`,
       });
       onTransactionSaved();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal menyimpan semua';
+    } catch (err: any) {
+      const msg = err?.message || err?.details || (typeof err === 'string' ? err : 'Gagal menyimpan semua');
       addMessage({ type: 'error', content: `Gagal menyimpan: ${msg}` });
     } finally {
       setIsLoading(false);
@@ -314,11 +314,11 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
 
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
-        raw_text: message.rawText || message.parsedData.description,
+        raw_text: (message.rawText || message.parsedData.description).slice(0, 480),
         category: message.parsedData.category,
         amount: message.parsedData.amount,
         transaction_date: message.parsedData.transaction_date,
-        description: message.parsedData.description,
+        description: message.parsedData.description.slice(0, 120),
         type: txMode,
       });
 
@@ -330,9 +330,9 @@ export default function ChatInput({ onTransactionSaved, resetKey }: Props) {
         content: `${label} disimpan - ${message.parsedData.description} (Rp ${message.parsedData.amount.toLocaleString('id-ID')})`,
       });
       onTransactionSaved();
-    } catch (err: unknown) {
+    } catch (err: any) {
       markConfirmSaved(message.id, false);
-      const msg = err instanceof Error ? err.message : 'Gagal menyimpan';
+      const msg = err?.message || err?.details || (typeof err === 'string' ? err : 'Gagal menyimpan');
       addMessage({ type: 'error', content: `Gagal menyimpan: ${msg}` });
     } finally {
       setIsLoading(false);
