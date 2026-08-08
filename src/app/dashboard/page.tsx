@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase, Transaction, Budget } from '@/lib/supabase';
 import ChatInput from '@/components/ChatInput';
+import BulkInput from '@/components/BulkInput';
 import CategoryChart from '@/components/CategoryChart';
 import BudgetCard from '@/components/BudgetCard';
 import WeeklyInsight from '@/components/WeeklyInsight';
@@ -222,6 +223,7 @@ export default function DashboardPage() {
   const [chatResetKey, setChatResetKey] = useState(0);
   const [darkMode, setDarkMode]     = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [inputMode, setInputMode] = useState<'chat'|'bulk'>('chat');
 
   // Dark mode effect
   useEffect(() => {
@@ -641,7 +643,25 @@ export default function DashboardPage() {
           {/* ══ CATAT ══ */}
           {activeMenu === 'record' && (
             <div style={{ minHeight:500 }}>
-              <ChatInput onTransactionSaved={handleRefresh} resetKey={chatResetKey} />
+              {/* Input mode tabs */}
+              <div style={{ display:'flex', gap:4, padding:4, borderRadius:12, background:'var(--page-bg)', border:'1px solid var(--border)', width:'fit-content', marginBottom:20 }}>
+                {(['chat','bulk'] as const).map((tab) => (
+                  <button key={tab} type="button" onClick={() => setInputMode(tab)}
+                    style={{ padding:'8px 16px', borderRadius:10, border:'none', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'inherit', background: inputMode===tab ? 'var(--card-bg)' : 'transparent', color: inputMode===tab ? 'var(--text-primary)' : 'var(--text-muted)', boxShadow: inputMode===tab ? 'var(--shadow-xs)' : 'none', transition:'all 0.15s' }}>
+                    {tab === 'chat' ? '🤖 AI Chat' : '📋 Input Banyak'}
+                  </button>
+                ))}
+              </div>
+              {inputMode === 'chat'
+                ? <ChatInput onTransactionSaved={handleRefresh} resetKey={chatResetKey} />
+                : <div className="surface-card" style={{ padding:24 }}>
+                    <div style={{ marginBottom:16 }}>
+                      <p className="section-title" style={{ marginBottom:4 }}>Input Banyak Transaksi</p>
+                      <p className="section-subtitle">Isi tabel di bawah — bisa banyak baris sekaligus, lalu simpan sekali klik</p>
+                    </div>
+                    <BulkInput userId={userId} onSaved={handleRefresh} />
+                  </div>
+              }
             </div>
           )}
 
