@@ -20,7 +20,7 @@
 
 DO $$
 DECLARE
-  uid UUID := 'PASTE_UUID_ALEX_DISINI';   -- ← GANTI INI
+  uid TEXT := 'PASTE_UUID_ALEX_DISINI';   -- ← GANTI DENGAN UUID DARI SUPABASE AUTH
 
   y  INT := EXTRACT(YEAR  FROM CURRENT_DATE)::INT;
   m  INT := EXTRACT(MONTH FROM CURRENT_DATE)::INT;
@@ -29,9 +29,9 @@ DECLARE
 
 BEGIN
 
-  -- Validasi: jangan sampai lupa ganti
-  IF uid::TEXT = 'PASTE_UUID_ALEX_DISINI' THEN
-    RAISE EXCEPTION 'Ganti dulu uid dengan UUID Alex yang asli!';
+  -- Validasi: pastikan sudah diganti
+  IF uid = 'PASTE_UUID_ALEX_DISINI' THEN
+    RAISE EXCEPTION '❌ Belum diganti! Isi uid dengan UUID Alex dari Supabase → Authentication → Users';
   END IF;
 
   m0 := TO_CHAR(MAKE_DATE(y, m,   1), 'YYYY-MM');
