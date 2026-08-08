@@ -630,37 +630,10 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Row: Weekly Insight + Top Category */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:16, alignItems:'start' }} className="dashboard-grid-2">
-                <div className="surface-card" style={{ padding:20 }}>
-                  <div className="section-header">
-                    <div>
-                      <p className="section-title">Insight Mingguan AI</p>
-                      <p className="section-subtitle">7 hari terakhir</p>
-                    </div>
-                  </div>
-                  <WeeklyInsight transactions={weeklyTransactions} />
-                </div>
-
-                {topCategory && (
-                  <div className="surface-card" style={{ padding:20, minWidth:240 }}>
-                    <p className="section-title" style={{ marginBottom:14 }}>Kategori Terbesar</p>
-                    <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                      <div style={{ width:48, height:48, borderRadius:14, background:`${topCategoryColor}18`, border:`1.5px solid ${topCategoryColor}30`, display:'grid', placeItems:'center', fontSize:13, fontWeight:800, color:topCategoryColor, flexShrink:0 }}>
-                        {topCategory.name.slice(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p style={{ fontSize:13, fontWeight:700, marginBottom:2 }}>{topCategory.name}</p>
-                        <p style={{ fontSize:17, fontWeight:800, color:topCategoryColor, letterSpacing:'-0.02em' }}>Rp {topCategory.amount.toLocaleString('id-ID')}</p>
-                        <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{topCategory.pct}% dari total pengeluaran</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* 30-day trend chart */}
               <TrendChart transactions={transactions} />
+
 
             </>
           )}
