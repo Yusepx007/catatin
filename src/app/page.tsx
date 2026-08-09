@@ -685,7 +685,7 @@ export default function HomePage() {
                 type="button"
                 style={{
                   padding: '9px 20px',
-                  borderRadius: 12, border: 'none', cursor: 'pointer',
+                  borderRadius: 12, cursor: 'pointer',
                   fontSize: 13, fontWeight: 600,
                   fontFamily: 'inherit',
                   background: activeTab === tab.id
